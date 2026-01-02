@@ -22,6 +22,7 @@ Em Guildmaster, os jogadores gerenciam uma taverna localizada em frente a uma es
 - [[Multiplayer and Maps]] - Estrutura de mundo, instanciamento, conexões e transições  
 - [[Combat and Movement]] - Movimento, prediction, reconciliação e regras de combate PvE  
 - [[Controls]] - Esquema de botões, stances e ações contextuais  
+- [[Technical Implementation]] - Status de implementação, sistemas integrados e testes realizados  
 
 ---
 ## **3. Estrutura de Mundo**

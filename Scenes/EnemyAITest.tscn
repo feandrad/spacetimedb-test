@@ -1,0 +1,81 @@
+[gd_scene load_steps=5 format=3 uid="uid://bqxvnwqxqxqxr"]
+
+[ext_resource type="Script" path="res://Scripts/GameManager.cs" id="1_gamemanager"]
+[ext_resource type="Script" path="res://Scripts/Core/PlayerController.cs" id="2_playercontroller"]
+[ext_resource type="Script" path="res://Scripts/Test/EnemyAITestController.cs" id="3_testcontroller"]
+[ext_resource type="Script" path="res://Scripts/Visual/EnemyVisualManager.cs" id="4_visualmanager"]
+
+[node name="EnemyAITest" type="Node"]
+
+[node name="GameManager" type="Node" parent="."]
+script = ExtResource("1_gamemanager")
+
+[node name="Player" type="CharacterBody2D" parent="."]
+position = Vector2(400, 300)
+script = ExtResource("2_playercontroller")
+PlayerId = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+shape = SubResource("RectangleShape2D_1")
+
+[node name="EnemyVisualManager" type="Node2D" parent="."]
+script = ExtResource("4_visualmanager")
+
+[node name="EnemyAITestController" type="Node" parent="."]
+script = ExtResource("3_testcontroller")
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+
+[node name="UI" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Instructions" type="Label" parent="UILayer/UI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 700.0
+offset_bottom = 200.0
+text = "🎮 Enemy AI Interactive Test Scene
+
+Controls:
+• WASD: Move player around the scene
+• SPACE: Create test enemy near player
+• E: Force enemy to attack player
+• Q: Run comprehensive enemy combat test
+• T: Toggle enemy target (set/clear player as target)
+• R: Remove all enemies from scene
+• H: Heal player (restore 25 HP)
+• F1: Show help in console
+
+👁️ Visual Guide:
+• Blue square = Player (you)
+• Red squares = Enemies (color changes with AI state)
+• Yellow circles = Detection range
+• Orange circles = Leash range
+• Red lines = Enemy targeting player
+
+Watch the console for detailed AI behavior logs!"
+vertical_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="UILayer/UI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = -80.0
+offset_right = 700.0
+offset_bottom = -10.0
+text = "🤖 Enemy AI System - Initializing...
+Player Position: (400, 300) | Health: 100/100
+Active Enemies: 0"
+vertical_alignment = 1
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(400, 300)

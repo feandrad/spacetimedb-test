@@ -1,0 +1,1 @@
+fn(ReducerContext, u32, WeaponType, f32, f32) -> Result<(), Box<(dyn StdError + 'static)>> {execute_attack}: Reducer<'_, _, _>

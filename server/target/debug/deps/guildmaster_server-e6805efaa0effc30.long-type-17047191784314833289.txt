@@ -1,0 +1,1 @@
+for<'a> fn(&'a ReducerContext, u32, WeaponType, f32, f32) -> Result<(), Box<(dyn StdError + 'static)>> {execute_attack}
