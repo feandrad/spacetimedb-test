@@ -1,1 +1,0 @@
-for<'a> fn(&'a ReducerContext, u32, std::string::String) -> Result<(), Box<(dyn StdError + 'static)>> {equip_item}

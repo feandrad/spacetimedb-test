@@ -1,1 +1,0 @@
-for<'a> fn(&'a ReducerContext, u32, std::string::String, f32, f32) -> Result<(), Box<(dyn StdError + 'static)>> {transition_to_map}

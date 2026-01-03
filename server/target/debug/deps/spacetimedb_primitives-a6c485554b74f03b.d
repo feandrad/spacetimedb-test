@@ -1,9 +1,0 @@
-/Users/feandrad/Develop/Godot/guildmaster-mvp/server/target/debug/deps/libspacetimedb_primitives-a6c485554b74f03b.rmeta: /Users/feandrad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-primitives-0.12.0/src/lib.rs /Users/feandrad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-primitives-0.12.0/src/attr.rs /Users/feandrad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-primitives-0.12.0/src/col_list.rs /Users/feandrad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-primitives-0.12.0/src/errno.rs /Users/feandrad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-primitives-0.12.0/src/ids.rs
-
-/Users/feandrad/Develop/Godot/guildmaster-mvp/server/target/debug/deps/spacetimedb_primitives-a6c485554b74f03b.d: /Users/feandrad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-primitives-0.12.0/src/lib.rs /Users/feandrad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-primitives-0.12.0/src/attr.rs /Users/feandrad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-primitives-0.12.0/src/col_list.rs /Users/feandrad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-primitives-0.12.0/src/errno.rs /Users/feandrad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-primitives-0.12.0/src/ids.rs
-
-/Users/feandrad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-primitives-0.12.0/src/lib.rs:
-/Users/feandrad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-primitives-0.12.0/src/attr.rs:
-/Users/feandrad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-primitives-0.12.0/src/col_list.rs:
-/Users/feandrad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-primitives-0.12.0/src/errno.rs:
-/Users/feandrad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-primitives-0.12.0/src/ids.rs:
