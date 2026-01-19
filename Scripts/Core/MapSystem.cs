@@ -54,7 +54,7 @@ namespace GuildmasterMVP.Core
             {
                 GD.Print($"Player {playerId} joined the game");
                 // Request sync to get their current map
-                _networkClient?.CallReducer("sync_map_state", _playerId);
+                _ = _networkClient?.CallReducerAsync("sync_map_state", _playerId);
             }
         }
         
@@ -147,7 +147,7 @@ namespace GuildmasterMVP.Core
             // Send transition request to server
             if (_networkClient != null)
             {
-                _networkClient.CallReducer("transition_to_map", playerId, mapId, entryPoint.X, entryPoint.Y);
+                _ = _networkClient.CallReducerAsync("transition_to_map", playerId, mapId, entryPoint.X, entryPoint.Y);
             }
             
             // Load the destination map if not already loaded
@@ -317,7 +317,7 @@ namespace GuildmasterMVP.Core
             // Send spawn request to server
             if (_networkClient != null)
             {
-                _networkClient.CallReducer("spawn_player_at_map", _playerId, mapId);
+                _ = _networkClient.CallReducerAsync("spawn_player_at_map", _playerId, mapId);
             }
             
             // Load the map locally
@@ -342,7 +342,7 @@ namespace GuildmasterMVP.Core
         {
             if (_networkClient != null)
             {
-                _networkClient.CallReducer("sync_map_state", _playerId);
+                _ = _networkClient.CallReducerAsync("sync_map_state", _playerId);
             }
         }
         
@@ -350,7 +350,7 @@ namespace GuildmasterMVP.Core
         {
             if (_networkClient != null)
             {
-                _networkClient.CallReducer("get_players_in_map", mapId);
+                _ = _networkClient.CallReducerAsync("get_players_in_map", mapId);
             }
         }
         

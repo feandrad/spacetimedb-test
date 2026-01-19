@@ -344,17 +344,17 @@ namespace GuildmasterMVP.Core
         
         #region Server Event Handlers
         
-        private void OnServerConnected()
+        private void OnServerConnected(string identity)
         {
-            GD.Print("SystemIntegrationManager: Connected to server");
+            GD.Print($"SystemIntegrationManager: Connected to server (identity: {identity})");
             
             // Initialize server-side objects and state
             InitializeServerState();
         }
         
-        private void OnServerDisconnected()
+        private void OnServerDisconnected(string reason)
         {
-            GD.Print("SystemIntegrationManager: Disconnected from server");
+            GD.Print($"SystemIntegrationManager: Disconnected from server: {reason}");
             
             // Handle disconnection cleanup
         }

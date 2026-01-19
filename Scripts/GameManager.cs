@@ -10,7 +10,7 @@ namespace GuildmasterMVP
     /// </summary>
     public partial class GameManager : Node
     {
-        [Export] public string ServerUrl { get; set; } = "ws://localhost:3000";
+        [Export] public string ServerUrl { get; set; } = "http://localhost:7734";
         
         private SpacetimeDBClient _dbClient;
         private InputManager _inputManager;
@@ -133,14 +133,14 @@ namespace GuildmasterMVP
             return true;
         }
         
-        private void OnConnectedToServer()
+        private void OnConnectedToServer(string identity)
         {
-            GD.Print("Connected to SpacetimeDB server");
+            GD.Print($"Connected to SpacetimeDB server (identity: {identity})");
         }
         
-        private void OnDisconnectedFromServer()
+        private void OnDisconnectedFromServer(string reason)
         {
-            GD.Print("Disconnected from SpacetimeDB server");
+            GD.Print($"Disconnected from SpacetimeDB server: {reason}");
             _isInitialized = false;
         }
         
