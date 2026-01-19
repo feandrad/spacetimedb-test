@@ -26,6 +26,7 @@ namespace GuildmasterMVP.Visual
         private bool _isConnected = false;
         private Color _selectedColor = Colors.Blue;
         private string _playerName = "Player";
+        private uint _localPlayerId = 0;
         
         public override void _Ready()
         {
@@ -235,17 +236,50 @@ namespace GuildmasterMVP.Visual
             }
         }
         
-        private void OnServerConnected(string identity)
+        private async void OnServerConnected(string identity)
         {
             _isConnected = true;
-            _statusLabel.Text = $"Connected! Identity: {identity.Substring(0, 8)}...";
-            _statusLabel.AddThemeColorOverride("font_color", Colors.Green);
+            _statusLabel.Text = $"Connected! Checking for existing player...";
+            _statusLabel.AddThemeColorOverride("font_color", Colors.Yellow);
             
             GD.Print($"[MainMenu] Connected to server (identity: {identity})");
             
-            // Show character creation panel
-            _connectionPanel.Visible = false;
-            _characterPanel.Visible = true;
+            // Wait for subscription to sync (important!)
+            await System.Threading.Tasks.Task.Delay(1000);
+            
+            // Check if player already exists for this identity
+            var existingPlayer = CheckForExistingPlayer();
+            
+            if (existingPlayer != null)
+            {
+                // Player exists - go straight to game
+                GD.Print($"[MainMenu] ✅ EXISTING PLAYER FOUND - LOGGING IN");
+                GD.Print($"[MainMenu]   - ID: {existingPlayer.Id}");
+                GD.Print($"[MainMenu]   - Username: {existingPlayer.Username}");
+                GD.Print($"[MainMenu]   - Map: {existingPlayer.CurrentMapId}");
+                GD.Print($"[MainMenu]   - Position: ({existingPlayer.PositionX}, {existingPlayer.PositionY})");
+                GD.Print($"[MainMenu]   - Health: {existingPlayer.Health}/{existingPlayer.MaxHealth}");
+                
+                _statusLabel.Text = $"Welcome back, {existingPlayer.Username}!";
+                _statusLabel.AddThemeColorOverride("font_color", Colors.Green);
+                
+                // Wait a moment to show the message
+                await System.Threading.Tasks.Task.Delay(1000);
+                
+                // Go straight to game - player data is already in the database
+                TransitionToGame();
+            }
+            else
+            {
+                // No existing player - show character creation
+                GD.Print($"[MainMenu] 🆕 No existing player found - showing character creation");
+                
+                _statusLabel.Text = $"Connected! Identity: {identity.Substring(0, 8)}...";
+                _statusLabel.AddThemeColorOverride("font_color", Colors.Green);
+                
+                _connectionPanel.Visible = false;
+                _characterPanel.Visible = true;
+            }
         }
         
         private void OnServerDisconnected(string reason)
@@ -305,8 +339,10 @@ namespace GuildmasterMVP.Visual
             
             if (success)
             {
-                _statusLabel.Text = "Entering world...";
-                await Task.Delay(500);
+                _statusLabel.Text = "Character created! Loading world...";
+                
+                // Wait a moment for the subscription to sync
+                await Task.Delay(1000);
                 
                 // Transition to main game
                 TransitionToGame();
@@ -319,23 +355,54 @@ namespace GuildmasterMVP.Visual
             }
         }
         
-        private async Task<bool> CreatePlayerOnServer()
+        /// <summary>
+        /// Check if a player already exists for the current identity
+        /// </summary>
+        private GuildmasterMVP.Network.Generated.Player? CheckForExistingPlayer()
         {
-            GD.Print($"[MainMenu] Registering player: {_playerName}");
+            if (_client?.Connection?.Db?.Player == null)
+            {
+                GD.PrintErr("[MainMenu] Cannot check for existing player - connection not ready");
+                return null;
+            }
             
             try
             {
-                // Call the register_player reducer with username only
-                // Note: Color selection is currently cosmetic (client-side only)
+                // Iterate through all players and find one matching our identity
+                foreach (var player in _client.Connection.Db.Player.Iter())
+                {
+                    if (player.Identity.ToString().ToUpper() == _client.Identity.ToUpper())
+                    {
+                        return player;
+                    }
+                }
+                
+                return null;
+            }
+            catch (Exception ex)
+            {
+                GD.PrintErr($"[MainMenu] Error checking for existing player: {ex.Message}");
+                return null;
+            }
+        }
+        
+        private async Task<bool> CreatePlayerOnServer()
+        {
+            GD.Print($"[MainMenu] Registering new player: {_playerName}");
+            
+            try
+            {
+                // Call the register_player reducer with username
+                // Server will check if player already exists and handle it
                 bool success = await _client.RegisterPlayerAsync(_playerName);
                 
                 if (success)
                 {
-                    GD.Print("[MainMenu] Player registered successfully on server");
+                    GD.Print("[MainMenu] ✅ Player registration request successful");
                 }
                 else
                 {
-                    GD.PrintErr("[MainMenu] Failed to register player on server");
+                    GD.PrintErr("[MainMenu] ❌ Failed to register player on server");
                 }
                 
                 return success;
@@ -343,6 +410,7 @@ namespace GuildmasterMVP.Visual
             catch (Exception ex)
             {
                 GD.PrintErr($"[MainMenu] Error registering player: {ex.Message}");
+                GD.PrintErr($"[MainMenu] Stack trace: {ex.StackTrace}");
                 return false;
             }
         }
@@ -350,6 +418,8 @@ namespace GuildmasterMVP.Visual
         private void TransitionToGame()
         {
             GD.Print("[MainMenu] Transitioning to main game...");
+            GD.Print($"[MainMenu] Client connected: {_client.IsConnected}");
+            GD.Print($"[MainMenu] Client identity: {_client.Identity}");
             
             // Load play scene
             var playScene = GD.Load<PackedScene>("res://Scenes/PlayScene.tscn");
@@ -358,8 +428,7 @@ namespace GuildmasterMVP.Visual
             // Pass client reference BEFORE adding to tree
             playInstance.SetClient(_client);
             
-            // TODO: Set local player ID when we get it from server
-            // playInstance.SetLocalPlayer(playerIdFromServer);
+            GD.Print("[MainMenu] Client passed to PlayScene");
             
             // Add to scene tree
             GetTree().Root.AddChild(playInstance);
@@ -367,7 +436,7 @@ namespace GuildmasterMVP.Visual
             // Hide menu
             Visible = false;
             
-            GD.Print("[MainMenu] Play scene loaded and initialized");
+            GD.Print("[MainMenu] Play scene loaded - PlayScene will find and render all players");
         }
         
         public override void _ExitTree()

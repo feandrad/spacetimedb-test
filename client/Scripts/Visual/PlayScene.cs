@@ -44,19 +44,22 @@ namespace GuildmasterMVP.Visual
         
         public override void _Ready()
         {
-            // Don't setup networking yet - wait for SetClient() to be called
+            GD.Print("========================================");
+            GD.Print("[PlayScene] ⚡ READY CALLED - SCENE IS LOADING");
+            GD.Print("========================================");
+            
             SetupCamera();
             SetupMap();
             SetupTransitionZones();
             
-            GD.Print("[PlayScene] Initialized (waiting for client)");
-        }
-        
-        public void Initialize()
-        {
-            // Called after SetClient()
-            SetupNetworking();
-            GD.Print("[PlayScene] Fully initialized with client");
+            GD.Print("[PlayScene] Scene setup complete (waiting for client)");
+            GD.Print($"[PlayScene] MapContainer children: {_mapContainer?.GetChildCount() ?? 0}");
+            
+            // If client was already set before _Ready, initialize now
+            if (_client != null)
+            {
+                SetupNetworking();
+            }
         }
         
         private void SetupCamera()
@@ -118,7 +121,30 @@ namespace GuildmasterMVP.Visual
             // Add debug markers
             RenderDebugMarkers(mapId);
             
+            // Add a test marker at camera center to verify rendering
+            CreateTestMarker(mapSize / 2);
+            
             GD.Print($"[PlayScene] Loaded map: {mapId} ({mapSize.X}x{mapSize.Y}), camera centered at {_camera.Position}");
+        }
+        
+        private void CreateTestMarker(Vector2 position)
+        {
+            // Big red square at camera center
+            var testMarker = new ColorRect();
+            testMarker.Name = "TestMarker_CameraCenter";
+            testMarker.Size = new Vector2(100, 100);
+            testMarker.Position = position - new Vector2(50, 50);
+            testMarker.Color = Colors.Red;
+            _mapContainer.AddChild(testMarker);
+            
+            var label = new Label();
+            label.Text = "CAMERA CENTER";
+            label.Position = position + new Vector2(-60, -120);
+            label.AddThemeColorOverride("font_color", Colors.White);
+            label.AddThemeFontSizeOverride("font_size", 20);
+            _mapContainer.AddChild(label);
+            
+            GD.Print($"[PlayScene] Created test marker at camera center: {position}");
         }
         
         private void SetupTransitionZones()
@@ -284,19 +310,61 @@ namespace GuildmasterMVP.Visual
             
             if (_client == null)
             {
-                GD.PrintErr("[PlayScene] SpacetimeDBClient not set! Call SetClient() before adding to tree.");
+                GD.PrintErr("[PlayScene] ❌ SpacetimeDBClient not set! Call SetClient() before adding to tree.");
                 return;
             }
             
-            // Subscribe to Player table
-            _client.SubscribeToTable("Player");
+            GD.Print($"[PlayScene] 🔧 Setting up networking...");
+            GD.Print($"[PlayScene]   - Client connected: {_client.IsConnected}");
+            GD.Print($"[PlayScene]   - Connection: {(_client.Connection != null ? "✓" : "✗")}");
+            GD.Print($"[PlayScene]   - Db: {(_client.Connection?.Db != null ? "✓" : "✗")}");
+            GD.Print($"[PlayScene]   - Player table: {(_client.Connection?.Db?.Player != null ? "✓" : "✗")}");
             
-            // TODO: When SpacetimeDB SDK is integrated, handle player updates
-            // _client.OnPlayerUpdate += OnPlayerUpdate;
-            // _client.OnPlayerInsert += OnPlayerInsert;
-            // _client.OnPlayerDelete += OnPlayerDelete;
+            // 1. Subscribe to FUTURE updates (new players connecting)
+            _client.PlayerJoined += OnPlayerJoinedSignal;
+            _client.PlayerUpdated += OnPlayerUpdatedSignal;
+            _client.PlayerLeft += OnPlayerLeftSignal;
+            GD.Print("[PlayScene] ✓ Subscribed to player signals");
             
-            GD.Print("[PlayScene] Subscribed to Player table");
+            // 2. Catch up on EXISTING players (the ones who are already here)
+            // This fixes the race condition where players joined before we subscribed
+            if (_client.Connection?.Db?.Player != null)
+            {
+                GD.Print("[PlayScene] 🔍 Checking for existing players in cache...");
+                
+                int existingPlayerCount = 0;
+                try
+                {
+                    foreach (var player in _client.Connection.Db.Player.Iter())
+                    {
+                        existingPlayerCount++;
+                        GD.Print($"[PlayScene] 👤 Found existing player #{existingPlayerCount}:");
+                        GD.Print($"         ID: {player.Id}");
+                        GD.Print($"         Username: {player.Username}");
+                        GD.Print($"         Map: {player.CurrentMapId}");
+                        GD.Print($"         Position: ({player.PositionX}, {player.PositionY})");
+                        GD.Print($"         Health: {player.Health}/{player.MaxHealth}");
+                        
+                        // Manually trigger the join logic for existing players
+                        OnPlayerJoined(player.Id, player.Username, player.CurrentMapId, 
+                                       player.PositionX, player.PositionY, player.Health, player.MaxHealth);
+                    }
+                    
+                    GD.Print($"[PlayScene] ✅ Loaded {existingPlayerCount} existing player(s)");
+                }
+                catch (Exception ex)
+                {
+                    GD.PrintErr($"[PlayScene] ❌ Error iterating players: {ex.Message}");
+                    GD.PrintErr($"[PlayScene] Stack trace: {ex.StackTrace}");
+                }
+            }
+            else
+            {
+                GD.PrintErr("[PlayScene] ⚠️ Warning: Connection.Db.Player is null - cannot load existing players");
+                GD.PrintErr("[PlayScene]   This usually means the subscription hasn't been applied yet");
+            }
+            
+            GD.Print($"[PlayScene] ✅ Networking setup complete. Total sprites: {_playerSprites.Count}");
         }
         
         public override void _Process(double delta)
@@ -348,122 +416,193 @@ namespace GuildmasterMVP.Visual
             }
         }
         
-        // TODO: Implement when SpacetimeDB SDK is integrated
-        private void OnPlayerUpdate(dynamic playerData)
+        // ============================================================================
+        // SIGNAL HANDLERS (from SpacetimeDBClient)
+        // ============================================================================
+        
+        private void OnPlayerJoinedSignal(uint playerId)
         {
-            uint playerId = playerData.id;
-            float posX = playerData.position_x;
-            float posY = playerData.position_y;
-            string mapId = playerData.current_map_id;
-            string username = playerData.username;
-            float health = playerData.health;
-            float maxHealth = playerData.max_health;
+            GD.Print($"[PlayScene] Player joined signal received: ID={playerId}");
+            
+            // Get player data from client's local cache
+            if (_client?.Connection?.Db.Player.Id.Find(playerId) is var player && player != null)
+            {
+                OnPlayerJoined(player.Id, player.Username, player.CurrentMapId, 
+                               player.PositionX, player.PositionY, player.Health, player.MaxHealth);
+            }
+        }
+        
+        /// <summary>
+        /// Core player join logic - used by both signal handler and initial load
+        /// </summary>
+        private void OnPlayerJoined(uint playerId, string username, string mapId, 
+                                    float posX, float posY, float health, float maxHealth)
+        {
+            GD.Print($"[PlayScene] 🎮 Processing player join:");
+            GD.Print($"         ID: {playerId}");
+            GD.Print($"         Username: {username}");
+            GD.Print($"         Map: {mapId}");
+            GD.Print($"         Current map: {_currentMapId}");
+            GD.Print($"         Position: ({posX}, {posY})");
             
             // Only render players in current map
-            if (mapId != _currentMapId)
+            if (mapId == _currentMapId)
             {
-                // Remove sprite if exists
-                if (_playerSprites.ContainsKey(playerId))
+                GD.Print($"[PlayScene] ✓ Player is in current map, creating sprite...");
+                
+                // Get player data from client's local cache
+                if (_client?.Connection?.Db.Player.Id.Find(playerId) is var player && player != null)
                 {
-                    _playerSprites[playerId].QueueFree();
-                    _playerSprites.Remove(playerId);
+                    // Check if this is the local player by matching identity
+                    if (player.Identity.ToString().ToUpper() == _client.Identity.ToUpper())
+                    {
+                        _localPlayerId = playerId;
+                        GD.Print($"[PlayScene] ⭐ This is the LOCAL PLAYER!");
+                    }
+                    
+                    CreatePlayerSprite(player);
                 }
-                return;
-            }
-            
-            // Get or create player sprite
-            Node2D playerSprite;
-            if (_playerSprites.ContainsKey(playerId))
-            {
-                playerSprite = _playerSprites[playerId];
+                else
+                {
+                    GD.PrintErr($"[PlayScene] ❌ Could not find player {playerId} in cache!");
+                }
             }
             else
             {
-                playerSprite = CreatePlayerSprite(playerId, username);
-                _playerSprites[playerId] = playerSprite;
+                GD.Print($"[PlayScene] ⏭️ Player is in different map ({mapId}), skipping sprite creation");
             }
-            
-            // Update position (server is authoritative)
-            playerSprite.Position = new Vector2(posX, posY);
-            _lastSentPosition = new Vector2(posX, posY);
-            
-            // Update health bar
-            UpdatePlayerHealth(playerSprite, health, maxHealth);
-            
-            // Camera stays centered on map (not following player)
-            // If you want camera to follow player, uncomment:
-            // if (playerId == _localPlayerId)
-            // {
-            //     _camera.Position = playerSprite.Position;
-            // }
         }
         
-        private Node2D CreatePlayerSprite(uint playerId, string username)
+        private void OnPlayerUpdatedSignal(uint playerId, Vector2 position, float health)
         {
+            // Get full player data from client's local cache
+            if (_client?.Connection?.Db.Player.Id.Find(playerId) is var player && player != null)
+            {
+                // If player changed maps, remove or add sprite
+                if (player.CurrentMapId != _currentMapId)
+                {
+                    if (_playerSprites.ContainsKey(playerId))
+                    {
+                        // Player left our map
+                        _playerSprites[playerId].QueueFree();
+                        _playerSprites.Remove(playerId);
+                    }
+                    return;
+                }
+                
+                // Update existing player sprite
+                if (_playerSprites.ContainsKey(playerId))
+                {
+                    UpdatePlayerSprite(player);
+                }
+                else
+                {
+                    // Player is in our map but we don't have a sprite yet
+                    CreatePlayerSprite(player);
+                }
+            }
+        }
+        
+        private void OnPlayerLeftSignal(uint playerId)
+        {
+            GD.Print($"[PlayScene] Player left signal received: ID={playerId}");
+            
+            if (_playerSprites.ContainsKey(playerId))
+            {
+                _playerSprites[playerId].QueueFree();
+                _playerSprites.Remove(playerId);
+            }
+        }
+        
+        private void CreatePlayerSprite(GuildmasterMVP.Network.Generated.Player player)
+        {
+            // Check if sprite already exists
+            if (_playerSprites.ContainsKey(player.Id))
+            {
+                GD.Print($"[PlayScene] Sprite already exists for player {player.Id}, skipping creation");
+                return;
+            }
+            
+            GD.Print($"[PlayScene] 🎨 Creating sprite for player {player.Id}...");
+            GD.Print($"[PlayScene]   - MapContainer: {_mapContainer != null}");
+            GD.Print($"[PlayScene]   - MapContainer in tree: {_mapContainer?.IsInsideTree()}");
+            
             var container = new Node2D();
-            container.Name = $"Player_{playerId}";
+            container.Name = $"Player_{player.Id}";
             _mapContainer.AddChild(container);
             
-            // Player circle (placeholder)
+            GD.Print($"[PlayScene]   - Container added to MapContainer");
+            
+            // Determine if this is the local player
+            bool isLocalPlayer = player.Identity.ToString().ToUpper() == _client.Identity.ToUpper();
+            if (isLocalPlayer)
+            {
+                _localPlayerId = player.Id;
+                GD.Print($"[PlayScene]   - ⭐ This is the LOCAL PLAYER!");
+            }
+            
+            // Player circle (placeholder) - BIGGER and more visible
             var sprite = new ColorRect();
-            sprite.Size = new Vector2(32, 32);
-            sprite.Position = new Vector2(-16, -16); // Center
-            sprite.Color = Colors.Blue;
+            sprite.Size = new Vector2(64, 64); // Doubled size
+            sprite.Position = new Vector2(-32, -32); // Center
+            sprite.Color = isLocalPlayer ? Colors.Cyan : Colors.Blue;
             container.AddChild(sprite);
+            
+            GD.Print($"[PlayScene]   - Sprite color: {(isLocalPlayer ? "Cyan (local)" : "Blue (other)")}");
             
             // Username label
             var label = new Label();
-            label.Text = username;
-            label.Position = new Vector2(-20, -30);
+            label.Text = player.Username;
+            label.Position = new Vector2(-40, -60);
             label.AddThemeColorOverride("font_color", Colors.White);
-            label.AddThemeFontSizeOverride("font_size", 12);
+            label.AddThemeFontSizeOverride("font_size", 18);
             container.AddChild(label);
             
             // Health bar background
             var healthBg = new ColorRect();
-            healthBg.Size = new Vector2(32, 4);
-            healthBg.Position = new Vector2(-16, 20);
+            healthBg.Size = new Vector2(64, 6);
+            healthBg.Position = new Vector2(-32, 40);
             healthBg.Color = Colors.DarkRed;
             container.AddChild(healthBg);
             
             // Health bar foreground
             var healthFg = new ColorRect();
             healthFg.Name = "HealthBar";
-            healthFg.Size = new Vector2(32, 4);
-            healthFg.Position = new Vector2(-16, 20);
+            healthFg.Size = new Vector2(64, 6);
+            healthFg.Position = new Vector2(-32, 40);
             healthFg.Color = Colors.Green;
             container.AddChild(healthFg);
             
-            GD.Print($"[PlayScene] Created sprite for player {playerId} ({username})");
+            // Set initial position
+            container.Position = new Vector2(player.PositionX, player.PositionY);
             
-            return container;
+            // Store reference
+            _playerSprites[player.Id] = container;
+            
+            GD.Print($"[PlayScene] ✅ Created sprite for player {player.Id} ({player.Username}) at ({player.PositionX}, {player.PositionY})");
+            GD.Print($"[PlayScene]   - Container position: {container.Position}");
+            GD.Print($"[PlayScene]   - Container global position: {container.GlobalPosition}");
+            GD.Print($"[PlayScene]   - Camera position: {_camera.Position}");
+            GD.Print($"[PlayScene]   - Total sprites now: {_playerSprites.Count}");
+            GD.Print($"[PlayScene]   - MapContainer children: {_mapContainer.GetChildCount()}");
         }
         
-        private void UpdatePlayerHealth(Node2D playerSprite, float health, float maxHealth)
+        private void UpdatePlayerSprite(GuildmasterMVP.Network.Generated.Player player)
         {
-            var healthBar = playerSprite.GetNode<ColorRect>("HealthBar");
+            if (!_playerSprites.ContainsKey(player.Id))
+                return;
+            
+            var sprite = _playerSprites[player.Id];
+            
+            // Update position
+            sprite.Position = new Vector2(player.PositionX, player.PositionY);
+            
+            // Update health bar
+            var healthBar = sprite.GetNodeOrNull<ColorRect>("HealthBar");
             if (healthBar != null)
             {
-                float healthPercent = health / maxHealth;
+                float healthPercent = player.Health / player.MaxHealth;
                 healthBar.Size = new Vector2(32 * healthPercent, 4);
-            }
-        }
-        
-        private void OnPlayerInsert(dynamic playerData)
-        {
-            GD.Print($"[PlayScene] Player joined: {playerData.username} (ID: {playerData.id})");
-            OnPlayerUpdate(playerData);
-        }
-        
-        private void OnPlayerDelete(dynamic playerData)
-        {
-            uint playerId = playerData.id;
-            GD.Print($"[PlayScene] Player left: {playerData.username} (ID: {playerId})");
-            
-            if (_playerSprites.ContainsKey(playerId))
-            {
-                _playerSprites[playerId].QueueFree();
-                _playerSprites.Remove(playerId);
             }
         }
         
@@ -478,11 +617,12 @@ namespace GuildmasterMVP.Visual
             _client = client;
             GD.Print("[PlayScene] Client set");
             
-            // Initialize networking now that we have the client
+            // If we're already in the tree, setup networking now
             if (IsInsideTree())
             {
-                Initialize();
+                SetupNetworking();
             }
+            // Otherwise, _Ready() will call SetupNetworking() when the scene is added
         }
     }
 }

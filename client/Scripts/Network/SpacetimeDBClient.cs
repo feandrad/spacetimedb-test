@@ -91,15 +91,34 @@ namespace GuildmasterMVP.Network
                     .OnDisconnect(OnDisconnected)
                     .Build();
                 
-                // Wait a moment for connection to establish
-                await Task.Delay(500);
+                // The connection is established asynchronously
+                // We need to wait for the OnConnect callback
+                // IMPORTANT: Must call FrameTick() to process connection messages!
+                int attempts = 0;
+                while (!IsConnected && attempts < 50) // 5 second timeout
+                {
+                    _dbConnection?.FrameTick(); // Process connection messages
+                    await Task.Delay(100);
+                    attempts++;
+                }
                 
-                return IsConnected;
+                if (!IsConnected)
+                {
+                    if (_enableDebugLogging)
+                        GD.PrintErr("[SpacetimeDBClient] Connection timeout - failed to connect within 5 seconds");
+                    return false;
+                }
+                
+                if (_enableDebugLogging)
+                    GD.Print($"[SpacetimeDBClient] Connection established successfully");
+                
+                return true;
             }
             catch (Exception ex)
             {
                 if (_enableDebugLogging)
                     GD.PrintErr($"[SpacetimeDBClient] Connection failed: {ex.Message}");
+                    GD.PrintErr($"[SpacetimeDBClient] Stack trace: {ex.StackTrace}");
                 EmitSignal(SignalName.ConnectionError, ex.Message);
                 return false;
             }
@@ -113,9 +132,27 @@ namespace GuildmasterMVP.Network
             if (_enableDebugLogging)
                 GD.Print("[SpacetimeDBClient] Disconnecting...");
             
+            // Unregister event handlers
+            CleanupTableEventHandlers();
+            
             _dbConnection?.Disconnect();
             _dbConnection = null;
             _currentIdentity = null;
+        }
+        
+        /// <summary>
+        /// Clean up table event handlers
+        /// </summary>
+        private void CleanupTableEventHandlers()
+        {
+            if (_dbConnection == null) return;
+            
+            _dbConnection.Db.Player.OnInsert -= OnPlayerInserted;
+            _dbConnection.Db.Player.OnUpdate -= OnPlayerUpdated;
+            _dbConnection.Db.Player.OnDelete -= OnPlayerDeleted;
+            
+            if (_enableDebugLogging)
+                GD.Print("[SpacetimeDBClient] Table event handlers unregistered");
         }
         
         // ============================================================================
@@ -127,9 +164,100 @@ namespace GuildmasterMVP.Network
             _currentIdentity = identity.ToString();
             
             if (_enableDebugLogging)
-                GD.Print($"[CLIENT] Connected (identity: {_currentIdentity})");
+            {
+                GD.Print($"[CLIENT] Connected successfully!");
+                GD.Print($"[CLIENT] Identity: {_currentIdentity}");
+                GD.Print($"[CLIENT] Connection active: {conn.IsActive}");
+            }
+            
+            // Subscribe to all tables to receive updates
+            SubscribeToAllTables();
+            
+            // Hook up table events - these fire when FrameTick() processes updates
+            SetupTableEventHandlers();
             
             EmitSignal(SignalName.Connected, _currentIdentity);
+        }
+        
+        /// <summary>
+        /// Set up event handlers for table insert/update/delete events
+        /// This is where we bridge SpacetimeDB events to Godot signals
+        /// </summary>
+        private void SetupTableEventHandlers()
+        {
+            if (_dbConnection == null) return;
+            
+            // Player table events
+            _dbConnection.Db.Player.OnInsert += OnPlayerInserted;
+            _dbConnection.Db.Player.OnUpdate += OnPlayerUpdated;
+            _dbConnection.Db.Player.OnDelete += OnPlayerDeleted;
+            
+            if (_enableDebugLogging)
+                GD.Print("[SpacetimeDBClient] Table event handlers registered");
+        }
+        
+        // ============================================================================
+        // TABLE EVENT HANDLERS
+        // ============================================================================
+        
+        private void OnPlayerInserted(EventContext ctx, Player player)
+        {
+            try
+            {
+                if (_enableDebugLogging)
+                    GD.Print($"[SpacetimeDBClient] Player inserted: ID={player.Id}, Username={player.Username}");
+                
+                // Emit signal that a player joined
+                EmitSignal(SignalName.PlayerJoined, player.Id);
+                
+                // Emit initial position/health update
+                var position = new Vector2(player.PositionX, player.PositionY);
+                EmitSignal(SignalName.PlayerUpdated, player.Id, position, player.Health);
+            }
+            catch (Exception ex)
+            {
+                GD.PrintErr($"[SpacetimeDBClient] Error in OnPlayerInserted: {ex.Message}");
+                GD.PrintErr($"[SpacetimeDBClient] Stack trace: {ex.StackTrace}");
+            }
+        }
+        
+        private void OnPlayerUpdated(EventContext ctx, Player oldPlayer, Player newPlayer)
+        {
+            try
+            {
+                if (_enableDebugLogging)
+                {
+                    GD.Print($"[SpacetimeDBClient] Player updated: ID={newPlayer.Id}");
+                    GD.Print($"  Position: ({oldPlayer.PositionX}, {oldPlayer.PositionY}) -> ({newPlayer.PositionX}, {newPlayer.PositionY})");
+                    GD.Print($"  Health: {oldPlayer.Health} -> {newPlayer.Health}");
+                }
+                
+                // Emit position/health update
+                var position = new Vector2(newPlayer.PositionX, newPlayer.PositionY);
+                EmitSignal(SignalName.PlayerUpdated, newPlayer.Id, position, newPlayer.Health);
+            }
+            catch (Exception ex)
+            {
+                GD.PrintErr($"[SpacetimeDBClient] Error in OnPlayerUpdated: {ex.Message}");
+                GD.PrintErr($"[SpacetimeDBClient] Stack trace: {ex.StackTrace}");
+            }
+        }
+        
+        private void OnPlayerDeleted(EventContext ctx, Player player)
+        {
+            try
+            {
+                if (_enableDebugLogging)
+                    GD.Print($"[SpacetimeDBClient] Player deleted: ID={player.Id}, Username={player.Username}");
+                
+                // Emit signal that a player left
+                EmitSignal(SignalName.PlayerLeft, player.Id);
+            }
+            catch (Exception ex)
+            {
+                GD.PrintErr($"[SpacetimeDBClient] Error in OnPlayerDeleted: {ex.Message}");
+                GD.PrintErr($"[SpacetimeDBClient] Stack trace: {ex.StackTrace}");
+            }
         }
         
         private void OnConnectError(Exception error)
@@ -145,7 +273,13 @@ namespace GuildmasterMVP.Network
             string reason = error?.Message ?? "Normal disconnect";
             
             if (_enableDebugLogging)
+            {
                 GD.Print($"[CLIENT] Disconnected: {reason}");
+                if (error != null)
+                {
+                    GD.PrintErr($"[CLIENT] Disconnect error details: {error}");
+                }
+            }
             
             EmitSignal(SignalName.Disconnected, reason);
         }
@@ -289,9 +423,19 @@ namespace GuildmasterMVP.Network
         public override void _Process(double delta)
         {
             // Process SpacetimeDB updates every frame
-            if (IsConnected)
+            if (IsConnected && _dbConnection != null)
             {
-                FrameTick();
+                try
+                {
+                    _dbConnection.FrameTick();
+                }
+                catch (Exception ex)
+                {
+                    GD.PrintErr($"[SpacetimeDBClient] FrameTick error: {ex.Message}");
+                    GD.PrintErr($"[SpacetimeDBClient] Stack trace: {ex.StackTrace}");
+                    
+                    // Don't disconnect on error, just log it
+                }
             }
         }
         
