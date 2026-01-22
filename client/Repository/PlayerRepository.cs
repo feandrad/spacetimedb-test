@@ -1,4 +1,5 @@
 using Guildmaster.Client.Network;
+using SpacetimeDB.Types;
 
 namespace Guildmaster.Client.Repository;
 
@@ -22,5 +23,15 @@ public class PlayerRepository(GuildmasterClient client)
         conn.Reducers.RegisterPlayer(usernameDisplay);
 
         return true;
+    }
+    
+    // Local: Repository/PlayerRepository.cs
+    public Player? GetLocalPlayer()
+    {
+        if (client.Connection == null || client.Identity == null) return null;
+
+        // Acessando via Db.Table.Iter() conforme o código gerado que você postou
+        return client.Connection.Db.Player.Iter()
+            .FirstOrDefault(p => p.Identity == client.Identity);
     }
 }

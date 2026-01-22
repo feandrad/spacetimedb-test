@@ -14,7 +14,7 @@ public sealed class GuildmasterClient
     {
         AuthToken.Init();
         
-        string? savedToken = AuthToken.Token;
+        var savedToken = AuthToken.Token;
         
         Connection = DbConnection.Builder()
             .WithUri(host)
@@ -25,6 +25,8 @@ public sealed class GuildmasterClient
                 Identity = identity;
                 AuthToken.SaveToken(token);
                 Console.WriteLine($"Connected as {identity}");
+                
+                SubscribeToMap("starting_area");
             })
             .OnConnectError(e =>
             {
@@ -36,6 +38,28 @@ public sealed class GuildmasterClient
                 Identity = null;
             })
             .Build();
+    }
+    
+    public void SubscribeToMap(string mapId)
+    {
+        // Definimos as queries baseadas nas tabelas do seu Rust
+        string[] queries =
+        [
+            $"SELECT * FROM Player WHERE current_map_id = '{mapId}'",
+            $"SELECT * FROM Enemy WHERE map_id = '{mapId}'",
+            $"SELECT * FROM InteractableObject WHERE map_id = '{mapId}'",
+            $"SELECT * FROM map_instance WHERE key_id = '{mapId}'"
+        ];
+
+        // Usando o builder do arquivo que você postou
+        Connection.SubscriptionBuilder()
+            .OnApplied(ctx => {
+                Console.WriteLine($"Dados do mapa {mapId} carregados com sucesso!");
+            })
+            .OnError((ctx, ex) => {
+                Console.WriteLine($"Erro na subscrição: {ex.Message}");
+            })
+            .Subscribe(queries); // Passa o array de strings aqui
     }
 
     public void Tick() => Connection?.FrameTick();

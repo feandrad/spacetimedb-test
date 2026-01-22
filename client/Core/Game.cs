@@ -1,38 +1,44 @@
+// Core/Game.cs
+
 using Guildmaster.Client.Network;
 using Guildmaster.Client.Repository;
+using Guildmaster.Client.World;
 using Raylib_cs;
-
-namespace Guildmaster.Client.Core;
-
-public enum GameState
-{
-    Login,
-    Loading,
-    Playing
-}
 
 public class Game
 {
     private GameState _state = GameState.Login;
-
     private string _usernameInput = "";
     private GuildmasterClient _client;
     private PlayerRepository _players;
+    private MapState _mapState; // Adicionado
+
+    // Seus renderizadores de ECS/Raylib
+    private PlayerRenderer _playerRenderer = new();
+    private MapRenderer _mapRenderer = new();
 
     public void Initialize()
     {
         _client = new GuildmasterClient();
-        _client.Connect("ws://localhost:7734", "guildmaster");
+        // Conecta ao servidor local onde rodam seus arquivos .rs
+        _client.Connect("ws://localhost:7734", "guildmaster"); 
 
         _players = new PlayerRepository(_client);
+        _mapState = new MapState(_client, _players);
     }
 
     public void Update()
     {
+        _client.Tick(); // Processa mensagens do SpacetimeDB
+
         switch (_state)
         {
             case GameState.Login:
                 UpdateLogin();
+                break;
+            case GameState.Playing:
+                _mapState.Tick(); // Monitora mudanças de mapa do map.rs
+                UpdatePlaying();
                 break;
         }
     }
@@ -40,55 +46,20 @@ public class Game
     public void Draw()
     {
         Raylib.BeginDrawing();
-        Raylib.ClearBackground(Color.DarkGray);
-
-        switch (_state)
+        
+        if (_state == GameState.Playing)
         {
-            case GameState.Login:
-                DrawLogin();
-                break;
+            Raylib.ClearBackground(Color.Black);
+            // Primeiro o chão, depois os bonecos (estilo Zelda)
+            _mapRenderer.Draw(_client.Connection, _mapState.CurrentMapId);
+            _playerRenderer.Draw(_client.Connection);
+        }
+        else
+        {
+            Raylib.ClearBackground(Color.DarkGray);
+            DrawLogin();
         }
 
         Raylib.EndDrawing();
-    }
-
-    private void UpdateLogin()
-    {
-        int key = Raylib.GetCharPressed();
-        while (key > 0)
-        {
-            if (_usernameInput.Length < 16)
-                _usernameInput += (char)key;
-            key = Raylib.GetCharPressed();
-        }
-
-        if (Raylib.IsKeyPressed(KeyboardKey.Backspace) && _usernameInput.Length > 0)
-            _usernameInput = _usernameInput[..^1];
-
-        if (Raylib.IsKeyPressed(KeyboardKey.Enter) && _usernameInput.Length > 0)
-        {
-            _state = GameState.Loading;
-
-            bool success = _players.LoginOrRegister(_usernameInput);
-
-            if (success)
-                _state = GameState.Playing;
-            else
-                _state = GameState.Login;
-        }
-    }
-
-    private void DrawLogin()
-    {
-        Raylib.DrawText("Enter Username:", 300, 160, 20, Color.White);
-        Raylib.DrawRectangle(250, 200, 300, 40, Color.Black);
-        Raylib.DrawText(_usernameInput, 260, 210, 20, Color.Green);
-
-        Raylib.DrawText("Press ENTER to login", 280, 260, 14, Color.LightGray);
-    }
-
-    public void Shutdown()
-    {
-        _client.Disconnect();
     }
 }
