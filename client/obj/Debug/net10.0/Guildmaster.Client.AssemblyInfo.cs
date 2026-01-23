@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Guildmaster.Client")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+214e685506159808393354999a37f55161c88b7d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7959d15190b6bc30ffdec0cdefae37fc9055fe95")]
 [assembly: System.Reflection.AssemblyProductAttribute("Guildmaster.Client")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Guildmaster.Client")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

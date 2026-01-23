@@ -45,9 +45,9 @@ public sealed class GuildmasterClient
         // Definimos as queries baseadas nas tabelas do seu Rust
         string[] queries =
         [
-            $"SELECT * FROM Player WHERE current_map_id = '{mapId}'",
-            $"SELECT * FROM Enemy WHERE map_id = '{mapId}'",
-            $"SELECT * FROM InteractableObject WHERE map_id = '{mapId}'",
+            $"SELECT * FROM player WHERE current_map_id = '{mapId}'",
+            $"SELECT * FROM enemy WHERE map_id = '{mapId}'",
+            $"SELECT * FROM interactable_object WHERE map_id = '{mapId}'",
             $"SELECT * FROM map_instance WHERE key_id = '{mapId}'"
         ];
 
@@ -60,6 +60,11 @@ public sealed class GuildmasterClient
                 Console.WriteLine($"Erro na subscrição: {ex.Message}");
             })
             .Subscribe(queries); // Passa o array de strings aqui
+    }
+
+    public void Register(string username)
+    {
+        Connection?.Reducers.RegisterPlayer(username);
     }
 
     public void Tick() => Connection?.FrameTick();
