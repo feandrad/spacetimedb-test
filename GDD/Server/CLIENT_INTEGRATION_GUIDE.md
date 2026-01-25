@@ -1,8 +1,8 @@
-# Client Integration Guide - Authentication & Map Rendering
+# Client Integration Guide - Authentication & Map Rendering (C# Raylib)
 
 ## Overview
 
-The server now supports player authentication and map data retrieval with comprehensive logging. This guide shows you how to integrate these features into your Godot client.
+The server now supports player authentication and map data retrieval with comprehensive logging. This guide shows you how to integrate these features into your client.
 
 ## Server Features
 
@@ -46,30 +46,26 @@ The server now supports player authentication and map data retrieval with compre
 
 ### Step 1: Connect to Server
 
-```gdscript
-# In your Godot client
-var spacetime_client = SpacetimeDBClient.new()
-spacetime_client.connect_to_server("http://localhost:7734", "guildmaster")
+```csharp
+# In your C# client
+var client = new GuildmasterClient();
+client.Connect("http://localhost:7734", "guildmaster");
 ```
 
 ### Step 2: Register/Authenticate Player
 
-```gdscript
-# On connection established
-func _on_connected():
-    # Try to register (will skip if already registered)
-    spacetime_client.call_reducer("register_player", ["YourUsername"])
-    
-    # Verify authentication
-    spacetime_client.call_reducer("get_player_info", [])
+```csharp
+// On connection established
+client.Register(username);
+// Verify authentication (handled by OnConnect callback in our C# client)
+
 ```
 
 ### Step 3: Subscribe to Player Table
 
-```gdscript
-# Subscribe to player updates
-func _on_connected():
-    spacetime_client.subscribe("SELECT * FROM player")
+```csharp
+// Subscribe to player updates (handled in Connect method via SubscriptionBuilder)
+// client.SubscribeToMap("starting_area");
     
 # Handle player updates
 func _on_player_update(player_data):
@@ -87,25 +83,33 @@ func _on_player_update(player_data):
     update_player_position(player_data)
 ```
 
-### Step 4: Request Map Data
+### Step 4: Subscribe to Map Data (Reactive Pattern)
+Instead of calling a reducer, we subscribe to database updates using SQL queries. This ensures the client automatically receives updates when entities spawn, move, or despawn.
 
-```gdscript
-# Request map data for rendering
-func load_map(map_id: String):
-    spacetime_client.call_reducer("get_map_data", [map_id])
-    
-    # The server will log map info - check server logs to confirm
-    # Then render your map based on the map_id
-    match map_id:
-        "starting_area":
-            render_starting_village()
-        "forest_area":
-            render_dark_forest()
+```csharp
+public void SubscribeToMap(string mapId)
+{
+    // Subscribe to map-specific entities and players in that map
+    string[] queries =
+    [
+        $"SELECT * FROM player WHERE current_map_id = '{mapId}'",
+        $"SELECT * FROM enemy WHERE map_id = '{mapId}'",
+        $"SELECT * FROM interactable_object WHERE map_id = '{mapId}'",
+        $"SELECT * FROM map_instance WHERE key_id = '{mapId}'"
+    ];
+
+    Connection.SubscriptionBuilder()
+        .OnApplied(ctx => Console.WriteLine($"Map data for {mapId} loaded successfully!"))
+        .OnError((ctx, ex) => Console.WriteLine($"Subscription error: {ex.Message}"))
+        .Subscribe(queries);
+}
 ```
+
+**Key Benefit**: This "Blackholio" pattern means your client is always in sync. You don't need to manually poll for map data or new players. The `SyncSystem` (Step 6) handles the logical updates via `OnInsert`/`OnUpdate`/`OnDelete` events.
 
 ### Step 5: Render Map
 
-```gdscript
+```csharp
 func render_starting_village():
     # Map dimensions: 1000x1000
     # Spawn point: (100, 500)
@@ -121,7 +125,7 @@ func render_starting_village():
 
 ### Step 6: Render Other Players
 
-```gdscript
+```csharp
 # When you receive player updates from subscription
 func _on_player_update(player_data):
     # Only render players in the same map

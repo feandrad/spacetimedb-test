@@ -4,6 +4,8 @@ using Guildmaster.Client.Core.Components;
 using Guildmaster.Client.Core.ECS;
 using Guildmaster.Client.Network;
 using Raylib_cs;
+using SpacetimeDB;
+using SpacetimeDB.ClientApi; // Added for RemoteTableHandle
 using SpacetimeDB.Types; 
 
 namespace Guildmaster.Client.Core.Systems;
@@ -12,141 +14,262 @@ public class SyncSystem : ISystem
 {
     private readonly GameWorld _world;
     private readonly NetworkSystem _network;
-    private readonly GuildmasterClient _client; // Need identity
+    private readonly GuildmasterClient _client; 
+    private readonly MapSystem _mapSystem; // Added dependency
 
-    // Mapping external ID (e.g. Identity or EntityId from DB) to local ECS Entity ID
-    // Since Player has Identity and Enemy has ulong EntityId, we might need separate maps or a composite key
     private readonly Dictionary<string, int> _playerEntityMap = new();
     private readonly Dictionary<uint, int> _enemyEntityMap = new();
 
-    public SyncSystem(GameWorld world, NetworkSystem network, GuildmasterClient client)
+    public SyncSystem(GameWorld world, NetworkSystem network, GuildmasterClient client, MapSystem mapSystem)
     {
         _world = world;
         _network = network;
         _client = client;
+        _mapSystem = mapSystem;
     }
+    
+    private bool _eventsRegistered = false;
 
     public void Update(float deltaTime)
     {
         var conn = _network.GetConnection();
         if (conn == null) return;
-
-        SyncPlayers(conn);
-        SyncEnemies(conn);
+        
+        if (!_eventsRegistered)
+        {
+            _eventsRegistered = true;
+            RegisterPlayerEvents(conn);
+            RegisterEnemyEvents(conn);
+            RegisterMapEvents(conn);
+            RegisterInteractableEvents(conn);
+            Console.WriteLine("[Sync] Events Registered.");
+            
+            // Initial Sync
+            foreach (var p in conn.Db.Player.Iter()) HandlePlayerInsert(null!, p);
+            foreach (var e in conn.Db.Enemy.Iter()) HandleEnemyInsert(null!, e);
+            foreach (var m in conn.Db.MapInstance.Iter()) HandleMapInsert(null!, m);
+            foreach (var i in conn.Db.InteractableObject.Iter()) HandleInteractableInsert(null!, i);
+        }
     }
 
-    private void SyncPlayers(DbConnection conn)
+    private void RegisterPlayerEvents(DbConnection conn)
     {
-        // 1. Mark all as not updated? Or just update existing / create new.
-        // For simple sync, we iterate DB.
-        // Ideally we should also remove entities that are no longer in DB (or in map view).
-        // But SpacetimeDB client SDK handles cache. If it's in cache, it's "here".
+        conn.Db.Player.OnInsert += HandlePlayerInsert;
+        conn.Db.Player.OnUpdate += HandlePlayerUpdate;
+        conn.Db.Player.OnDelete += HandlePlayerDelete;
+    }
 
-        // Using a set to track active entities for this frame to detect deletions if needed
-        // For MVP, we'll just Sync Update/Create. Deletion from cache is handled by SDK events normally, 
-        // but since we iterate cache, "implicitly" vanished entities won't be updated. 
-        // Real ECS usually needs "Systems" to remove stale entities. 
-        // Simplification: We blindly update. If performance issues, optimize.
+    private void RegisterEnemyEvents(DbConnection conn)
+    {
+        conn.Db.Enemy.OnInsert += HandleEnemyInsert;
+        conn.Db.Enemy.OnUpdate += HandleEnemyUpdate;
+        conn.Db.Enemy.OnDelete += HandleEnemyDelete;
+    }
+
+    // --- Player Handlers ---
+
+    private void HandlePlayerInsert(EventContext ctx, Player p)
+    {
+        // Identity is struct, never null, but good to be safe if types change
+        var identityStr = p.Identity.ToString();
         
-        foreach (var p in conn.Db.Player.Iter())
+        if (_playerEntityMap.ContainsKey(identityStr)) return; // Already exists
+
+        Console.WriteLine($"[Sync] Player Inserted: {p.UsernameDisplay} (ID: {p.Id})");
+
+        var entity = _world.CreateEntity();
+        _playerEntityMap[identityStr] = entity.Id;
+        
+        // Add Components
+        entity.AddComponent(new PositionComponent { Position = new Vector2(p.PositionX, p.PositionY) });
+        entity.AddComponent(new RenderComponent { 
+            IsCircle = true, 
+            Color = (p.Identity == _client.Identity) ? Color.Blue : Color.Purple 
+        });
+        
+        var ply = new PlayerComponent
         {
-            // Strict ID Check
-            if (p.Identity == null) continue; // Should not happen
-            var identityStr = p.Identity.ToString();
+            PlayerId = p.Id,
+            Identity = p.Identity,
+            Username = p.UsernameDisplay,
+            IsDowned = p.IsDowned,
+            IsLocalPlayer = (p.Identity == _client.Identity)
+        };
+        entity.AddComponent(ply);
+    }
 
-            if (!_playerEntityMap.TryGetValue(identityStr, out var entityId))
-            {
-                var entity = _world.CreateEntity();
-                entityId = entity.Id;
-                _playerEntityMap[identityStr] = entityId;
-                
-                // Add Components
-                entity.AddComponent(new PositionComponent());
-                entity.AddComponent(new RenderComponent { IsCircle = true });
-                entity.AddComponent(new PlayerComponent());
-            }
+    private void HandlePlayerUpdate(EventContext ctx, Player oldP, Player newP)
+    {
+        var oldIdentityStr = oldP.Identity.ToString();
+        var newIdentityStr = newP.Identity.ToString();
+        
+        // 1. Try to find entity by OLD identity
+        if (!_playerEntityMap.TryGetValue(oldIdentityStr, out var entityId))
+        {
+             // If not found by old ID, maybe we already updated or it was inserted with NEW ID?
+             // Try find by NEW ID just in case
+             if (_playerEntityMap.TryGetValue(newIdentityStr, out entityId))
+             {
+                 // Found by new ID, proceed
+             }
+             else
+             {
+                 return; // Not found
+             }
+        }
 
-            // Validating Data before applying
-            if (float.IsNaN(p.PositionX) || float.IsNaN(p.PositionY))
-            {
-                // Error handling / skip
-                Console.WriteLine($"[SyncError] Player {p.UsernameDisplay} has NaN position.");
-                continue;
-            }
+        var entity = _world.GetEntity(entityId);
+        if (entity == null) return;
 
-            var entityRef = _world.GetEntity(entityId);
-            if (entityRef == null) continue;
-
-            // Sync Data
-            var pos = entityRef.GetComponent<PositionComponent>();
-            if (pos != null) pos.Position = new Vector2(p.PositionX, p.PositionY);
-
-            var ply = entityRef.GetComponent<PlayerComponent>();
+        // 2. If Identity Changed (Reclaim scenario), update the map
+        if (oldIdentityStr != newIdentityStr)
+        {
+            Console.WriteLine($"[Sync] Identity changed from {oldIdentityStr} to {newIdentityStr} (Reclaim). Updating map.");
+            _playerEntityMap.Remove(oldIdentityStr);
+            _playerEntityMap[newIdentityStr] = entityId;
+            
+            // Update components that depend on Identity
+            var ply = entity.GetComponent<PlayerComponent>();
             if (ply != null)
             {
-                ply.PlayerId = p.Id; // Sync PlayerId
-                ply.Identity = p.Identity;
-                ply.Username = p.UsernameDisplay;
-                ply.IsDowned = p.IsDowned;
-                ply.IsLocalPlayer = (p.Identity == _client.Identity);
+                ply.Identity = newP.Identity;
+                ply.IsLocalPlayer = (newP.Identity == _client.Identity);
             }
             
-            var rend = entityRef.GetComponent<RenderComponent>();
+            var rend = entity.GetComponent<RenderComponent>();
             if (rend != null)
             {
-                rend.Color = (ply?.IsLocalPlayer ?? false) ? Color.Blue : Color.Purple;
+                rend.Color = (newP.Identity == _client.Identity) ? Color.Blue : Color.Purple;
             }
+        }
+
+        // Update Components
+        var pos = entity.GetComponent<PositionComponent>();
+        if (pos != null) pos.Position = new Vector2(newP.PositionX, newP.PositionY);
+
+        var pComp = entity.GetComponent<PlayerComponent>();
+        if (pComp != null)
+        {
+            pComp.IsDowned = newP.IsDowned;
+        }
+        
+        if (oldP.IsDowned != newP.IsDowned)
+            Console.WriteLine($"[Sync] Player {newP.UsernameDisplay} downed status changed to {newP.IsDowned}");
+    }
+
+    private void HandlePlayerDelete(EventContext ctx, Player p)
+    {
+        var identityStr = p.Identity.ToString();
+        if (_playerEntityMap.TryGetValue(identityStr, out var entityId))
+        {
+            Console.WriteLine($"[Sync] Player Deleted: {p.UsernameDisplay}");
+            _world.DestroyEntity(entityId);
+            _playerEntityMap.Remove(identityStr);
         }
     }
 
-    private void SyncEnemies(DbConnection conn)
+    // --- Enemy Handlers ---
+
+    private void HandleEnemyInsert(EventContext ctx, Enemy e)
     {
-        foreach (var e in conn.Db.Enemy.Iter())
+        if (_enemyEntityMap.ContainsKey(e.Id)) return;
+
+        var entity = _world.CreateEntity();
+        _enemyEntityMap[e.Id] = entity.Id;
+        
+        entity.AddComponent(new PositionComponent { Position = new Vector2(e.PositionX, e.PositionY) });
+        entity.AddComponent(new RenderComponent { 
+            IsCircle = false, 
+            Color = GetEnemyColor(e.State), 
+            Radius = 15 
+        });
+        entity.AddComponent(new EnemyComponent {
+            Health = e.Health,
+            MaxHealth = e.MaxHealth,
+            State = e.State
+        });
+    }
+
+    private void HandleEnemyUpdate(EventContext ctx, Enemy oldE, Enemy newE)
+    {
+        if (!_enemyEntityMap.TryGetValue(newE.Id, out var entityId)) return;
+
+        var entity = _world.GetEntity(entityId);
+        if (entity == null) return;
+
+        var pos = entity.GetComponent<PositionComponent>();
+        if (pos != null) pos.Position = new Vector2(newE.PositionX, newE.PositionY);
+
+        var enemy = entity.GetComponent<EnemyComponent>();
+        if (enemy != null)
         {
-             // e.Id is the unique key (uint)
-             if (!_enemyEntityMap.TryGetValue(e.Id, out var entityId))
-             {
-                 var entity = _world.CreateEntity();
-                 entityId = entity.Id;
-                 _enemyEntityMap[e.Id] = entityId;
-                 
-                 entity.AddComponent(new PositionComponent());
-                 entity.AddComponent(new RenderComponent { IsCircle = false, Color = Color.Orange, Radius = 15 }); // Square logic in RenderSystem handled by IsCircle=false check?
-                 // Wait, RenderSystem used IsCircle property. I should double check RenderSystem.
-                 // RenderSystem checked (if render.IsCircle).
-                 // So I need to set IsCircle = false for square?
-                 // Or add EnemyComponent to trigger specific drawing?
-                 
-                 entity.AddComponent(new EnemyComponent());
-             }
-             
-             var entityRef = _world.GetEntity(entityId);
-             if (entityRef == null) continue;
-             
-             var pos = entityRef.GetComponent<PositionComponent>();
-             if (pos != null) pos.Position = new Vector2(e.PositionX, e.PositionY);
-             
-             var enemy = entityRef.GetComponent<EnemyComponent>();
-             if (enemy != null)
-             {
-                 enemy.Health = e.Health;
-                 enemy.MaxHealth = e.MaxHealth;
-                 enemy.State = e.State;
-             }
-             
-             var rend = entityRef.GetComponent<RenderComponent>();
-             if (rend != null)
-             {
-                  // Color based on state
-                  rend.Color = e.State switch
-                  {
-                      "Chasing" => Color.Red,
-                      "ChasingThroughMap" => Color.Purple,
-                      _ => Color.Orange
-                  };
-             }
+            enemy.Health = newE.Health;
+            enemy.State = newE.State;
+        }
+
+        var rend = entity.GetComponent<RenderComponent>();
+        if (rend != null)
+        {
+            rend.Color = GetEnemyColor(newE.State);
         }
     }
+
+    private void RegisterMapEvents(DbConnection conn)
+    {
+        conn.Db.MapInstance.OnInsert += HandleMapInsert;
+        conn.Db.MapInstance.OnUpdate += HandleMapUpdate;
+    }
+    
+    private void RegisterInteractableEvents(DbConnection conn)
+    {
+        conn.Db.InteractableObject.OnInsert += HandleInteractableInsert;
+        // conn.Db.InteractableObject.OnUpdate += HandleInteractableUpdate; // MVP: Static pos usually
+        // conn.Db.InteractableObject.OnDelete += HandleInteractableDelete;
+    }
+
+    private void HandleMapInsert(EventContext ctx, MapInstance m)
+    {
+        _mapSystem.UpdateMapInfo(m.KeyId, m.Metadata);
+    }
+    private void HandleMapUpdate(EventContext ctx, MapInstance oldM, MapInstance newM)
+    {
+        _mapSystem.UpdateMapInfo(newM.KeyId, newM.Metadata);
+    }
+    
+    private void HandleInteractableInsert(EventContext ctx, InteractableObject i)
+    {
+         // Assuming we can map interactable ID to entity map for updates later if needed
+         // For now, fire and forget entity creation or keep map
+         var entity = _world.CreateEntity();
+         
+         entity.AddComponent(new PositionComponent { Position = new Vector2(i.PositionX, i.PositionY) });
+         
+         // Brown for Transitions / Portals
+         var color = Color.Brown; 
+         // Could check i.ObjectType == "Portal" vs "Resource" etc.
+         
+         entity.AddComponent(new RenderComponent { 
+             IsCircle = false, 
+             Color = color, 
+             Radius = 20 // Slightly larger/distinct
+         });
+    }
+
+    private void HandleEnemyDelete(EventContext ctx, Enemy e)
+    {
+        if (_enemyEntityMap.TryGetValue(e.Id, out var entityId))
+        {
+            _world.DestroyEntity(entityId);
+            _enemyEntityMap.Remove(e.Id);
+        }
+    }
+
+    private Color GetEnemyColor(string state) => state switch
+    {
+        "Chasing" => Color.Red,
+        "ChasingThroughMap" => Color.Purple,
+        _ => Color.Orange
+    };
 
     public void Draw() { }
 }

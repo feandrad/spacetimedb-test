@@ -9,18 +9,56 @@ namespace Guildmaster.Client.Core.Systems;
 public class RenderSystem : ISystem
 {
     private readonly GameWorld _world;
-    private readonly DbConnection? _conn; // For referencing strict DB types if needed, but components should suffice
+    private readonly MapSystem _mapSystem; // Added dependency
+    private readonly DbConnection? _conn; 
 
-    public RenderSystem(GameWorld world, DbConnection? conn)
+    private Camera2D _camera;
+
+    public RenderSystem(GameWorld world, MapSystem mapSystem, DbConnection? conn)
     {
         _world = world;
+        _mapSystem = mapSystem;
         _conn = conn;
+        
+        _camera = new Camera2D();
+        _camera.Zoom = 1.0f;
+        _camera.Rotation = 0.0f;
+        _camera.Offset = new Vector2(400, 225); // Center of 800x450
     }
 
-    public void Update(float deltaTime) { }
+    public void Update(float deltaTime) 
+    {
+        // Find local player to center camera
+        foreach (var entity in _world.GetEntities())
+        {
+            var player = entity.GetComponent<PlayerComponent>();
+            var pos = entity.GetComponent<PositionComponent>();
+            
+            if (player != null && player.IsLocalPlayer && pos != null)
+            {
+                // Update camera target
+                _camera.Target = pos.Position;
+                break;
+            }
+        }
+    }
 
     public void Draw()
     {
+        // 1. Outside Map (Black)
+        Raylib.ClearBackground(Color.Black);
+
+        Raylib.BeginMode2D(_camera);
+
+        // 2. Movable Area (Dark Green)
+        Raylib.DrawRectangle(0, 0, _mapSystem.MapWidth, _mapSystem.MapHeight, new Color(30, 40, 30, 255));
+        
+        // 3. Grid (Optional, but good for spatial awareness)
+        for(int x = 0; x <= _mapSystem.MapWidth; x+=50) 
+            Raylib.DrawLine(x, 0, x, _mapSystem.MapHeight, new Color(50, 60, 50, 255));
+        for(int y = 0; y <= _mapSystem.MapHeight; y+=50) 
+            Raylib.DrawLine(0, y, _mapSystem.MapWidth, y, new Color(50, 60, 50, 255));
+
         // Draw Entity Graphics
         foreach (var entity in _world.GetEntities())
         {
@@ -54,5 +92,7 @@ public class RenderSystem : ISystem
                 }
             }
         }
+        
+        Raylib.EndMode2D();
     }
 }

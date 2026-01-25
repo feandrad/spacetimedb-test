@@ -1,4 +1,5 @@
-# Technical Implementation Status
+# Technical Implementation: C# Client & Rust Serverview
+Este documento consolida o status técnico atual do projeto Guildmaster MVP, incluindo sistemas implementados, testes realizados e correções aplicadas.
 
 ## Overview
 Este documento consolida o status técnico atual do projeto Guildmaster MVP, incluindo sistemas implementados, testes realizados e correções aplicadas.

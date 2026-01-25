@@ -4,7 +4,7 @@ using Guildmaster.Client.Network;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         Raylib.InitWindow(800, 450, "Guildmaster – Login");
         Raylib.SetTargetFPS(60);

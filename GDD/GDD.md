@@ -64,7 +64,7 @@ Em Guildmaster, os jogadores gerenciam uma taverna localizada em frente a uma es
 ---
 ## **8. Tecnologias e Rede**
 - **Servidor**: construído sobre **SpacetimeDB** (Rust)  
-- **Cliente**: desenvolvido em **Godot 4 (C#)**  
+- **Cliente**: desenvolvido em **Raylib (C#)**  
 - Comunicação ocorre via **reducers** (intenções) e **subscriptions** (estado validado), transportados em **WebSocket/BSATN**  
 - Toda lógica crítica (movimento, combate, loot, instanciamento de mapas) é validada no servidor  
 👉 **Detalhes técnicos sobre registro de recursos** (mapas, itens, entidades) estão documentados em [[Registry]].
