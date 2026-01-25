@@ -73,12 +73,14 @@ public sealed class GuildmasterClient
             {
                 Console.WriteLine(e != null ? $"Disconnected abnormally: {e}" : "Disconnected normally.");
                 Identity = null;
+                OnDisconnected?.Invoke();
             })
             .Build();
     }
 
     public event Action<string>? OnConnectionError;
     public event Action<string>? OnRegistrationError;
+    public event Action? OnDisconnected;
     
     public void SubscribeToPlayers()
     {
@@ -88,18 +90,22 @@ public sealed class GuildmasterClient
             .Subscribe(["SELECT * FROM player"]);
     }
     
-    public void SubscribeToMap(string mapId)
+    public void SubscribeToMap(string mapId, uint? localPlayerId = null)
     {
-        // Subscribe to map-specific entities
-        // We also include player filtered by map to be sure we have everything in scope, 
-        // effectively upgrading our subscription if needed, or ensuring we get updates for this map.
-        string[] queries =
-        [
+        // Subscribe to map-specific entities + Local Player explicitly
+        var queries = new List<string>
+        {
             $"SELECT * FROM player WHERE current_map_id = '{mapId}'",
             $"SELECT * FROM enemy WHERE map_id = '{mapId}'",
             $"SELECT * FROM interactable_object WHERE map_id = '{mapId}'",
             $"SELECT * FROM map_instance WHERE key_id = '{mapId}'"
-        ];
+        };
+        
+        // Ensure we always track ourselves so we don't return null in GetLocalPlayer()
+        if (localPlayerId.HasValue)
+        {
+            queries.Add($"SELECT * FROM player WHERE id = {localPlayerId.Value}");
+        }
 
         Connection.SubscriptionBuilder()
             .OnApplied(ctx => {
@@ -108,7 +114,7 @@ public sealed class GuildmasterClient
             .OnError((ctx, ex) => {
                 Console.WriteLine($"Subscription error: {ex.Message}");
             })
-            .Subscribe(queries);
+            .Subscribe(queries.ToArray());
     }
 
     public void Register(string username)

@@ -58,15 +58,11 @@ public class MapSystem : ISystem
         CurrentMapId = newMapId;
         
         // Subscription Management
-        string[] queries =
-        [
-            $"SELECT * FROM player WHERE current_map_id = '{newMapId}'",
-            $"SELECT * FROM enemy WHERE map_id = '{newMapId}'",
-            $"SELECT * FROM interactable_object WHERE map_id = '{newMapId}'",
-            $"SELECT * FROM map_instance WHERE key_id = '{newMapId}'"
-        ];
-
-        _client.Connection?.SubscriptionBuilder().Subscribe(queries);
+        // Get our ID to stay subscribed
+        var me = _repo.GetLocalPlayer();
+        uint? myId = me?.Id; 
+        
+        _client.SubscribeToMap(newMapId, myId);
         
         OnMapChanged?.Invoke(newMapId);
     }

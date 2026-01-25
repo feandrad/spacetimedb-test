@@ -11,4 +11,5 @@ public class PlayerComponent : Component
     public Identity Identity { get; set; }
     public bool IsLocalPlayer { get; set; }
     public bool IsDowned { get; set; }
+    public uint LastInputSequence { get; set; }
 }

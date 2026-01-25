@@ -45,6 +45,13 @@ public class InputSystem : ISystem
         var posComp = localPlayerEntity.GetComponent<PositionComponent>();
         if (playerComp == null || posComp == null) return;
 
+        // Sync Sequence if needed (e.g. freshly loaded player)
+        if (_inputSequence == 0 && playerComp.LastInputSequence > 0)
+        {
+             _inputSequence = playerComp.LastInputSequence + 1;
+             Console.WriteLine($"[Input] Synced sequence to {_inputSequence}");
+        }
+
         if (_input.IsActionDown(CharacterAction.MoveUp) || 
             _input.IsActionDown(CharacterAction.MoveDown) || 
             _input.IsActionDown(CharacterAction.MoveLeft) || 
@@ -55,7 +62,7 @@ public class InputSystem : ISystem
             // Client-Side Prediction (Basic): Update local pos immediately?
             // For MVP strict mode, maybe wait for server? 
             // Better experience: Update locally.
-            // posComp.Position += vec * 100 * deltaTime; // Example speed
+            posComp.Position += vec * 100 * deltaTime; // Example speed
 
             if (Raylib_cs.Raylib.GetTime() - _lastMoveSendTime > MoveSendInterval) 
             {

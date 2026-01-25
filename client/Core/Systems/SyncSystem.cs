@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using Guildmaster.Client.Core.Components;
 using Guildmaster.Client.Core.ECS;
@@ -26,6 +27,84 @@ public class SyncSystem : ISystem
         _network = network;
         _client = client;
         _mapSystem = mapSystem;
+        _mapSystem.OnMapChanged += OnMapChanged;
+    }
+
+    private void OnMapChanged(string mapId)
+    {
+        RefreshPlayers();
+    }
+
+    private void RefreshPlayers()
+    {
+        Console.WriteLine($"[Sync] Refreshing players for map: {_mapSystem.CurrentMapId}");
+        
+        // 1. Remove irrelevant players
+        // Create a list to remove to avoid modification during iteration
+        var toRemove = new List<string>();
+        foreach (var kvp in _playerEntityMap)
+        {
+            var entity = _world.GetEntity(kvp.Value);
+            if (entity == null) continue;
+            
+            var pComp = entity.GetComponent<PlayerComponent>();
+            if (pComp == null) continue;
+            
+            // Check relevance manually since we don't have the Player struct here easily
+            // But we have the data in components
+            // Actually, querying the DB is better? 
+            // We can check the DB for this identity.
+            
+            // Simpler: Just rely on DB state? 
+            // Or assume if they are in EntityMap, they handled Insert/Update.
+            // But now criteria changed (MapId changed).
+            
+            // We need to check if this entity is still relevant.
+            // Problem: We don't store CurrentMapId in PlayerComponent (we noticed this earlier).
+            // So we MUST check the DB or store it.
+            // Checking DB is safer.
+        }
+        
+        // Easier approach: Iterate ALL players in DB. 
+        // If Relevant -> Ensure Entity Exists.
+        // If Not Relevant -> Ensure Entity Does NOT Exist.
+        
+        var conn = _network.GetConnection();
+        if (conn == null) return;
+        
+        // Track valid identities to detect removals
+        var validIdentities = new HashSet<string>();
+
+        foreach (var p in conn.Db.Player.Iter())
+        {
+            if (IsPlayerRelevant(p))
+            {
+                validIdentities.Add(p.Identity.ToString());
+                HandlePlayerInsert(null!, p); // idempotent-ish (checks contains key)
+            }
+        }
+        
+        // Remove entities that are no longer relevant
+        // We iterate our map, if not in validIdentities, remove.
+        var allTracked = _playerEntityMap.Keys.ToList();
+        foreach (var idStr in allTracked)
+        {
+            if (!validIdentities.Contains(idStr))
+            {
+                if (_playerEntityMap.TryGetValue(idStr, out var eId))
+                {
+                    _world.DestroyEntity(eId);
+                    _playerEntityMap.Remove(idStr);
+                }
+            }
+        }
+    }
+
+    private bool IsPlayerRelevant(Player p)
+    {
+        // Server now filters for us. 
+        // We trust that if we receive an update, it is relevant (either same map OR it is me).
+        return true; 
     }
     
     private bool _eventsRegistered = false;
@@ -73,6 +152,8 @@ public class SyncSystem : ISystem
         // Identity is struct, never null, but good to be safe if types change
         var identityStr = p.Identity.ToString();
         
+        if (!IsPlayerRelevant(p)) return;
+
         if (_playerEntityMap.ContainsKey(identityStr)) return; // Already exists
 
         Console.WriteLine($"[Sync] Player Inserted: {p.UsernameDisplay} (ID: {p.Id})");
@@ -93,7 +174,8 @@ public class SyncSystem : ISystem
             Identity = p.Identity,
             Username = p.UsernameDisplay,
             IsDowned = p.IsDowned,
-            IsLocalPlayer = (p.Identity == _client.Identity)
+            IsLocalPlayer = (p.Identity == _client.Identity),
+            LastInputSequence = p.LastInputSequence
         };
         entity.AddComponent(ply);
     }
@@ -106,16 +188,20 @@ public class SyncSystem : ISystem
         // 1. Try to find entity by OLD identity
         if (!_playerEntityMap.TryGetValue(oldIdentityStr, out var entityId))
         {
-             // If not found by old ID, maybe we already updated or it was inserted with NEW ID?
-             // Try find by NEW ID just in case
-             if (_playerEntityMap.TryGetValue(newIdentityStr, out entityId))
+             // If not found by old ID, maybe it's a new relevant player (moved into map)?
+             if (IsPlayerRelevant(newP))
              {
-                 // Found by new ID, proceed
+                 HandlePlayerInsert(ctx, newP);
              }
-             else
-             {
-                 return; // Not found
-             }
+             return; 
+        }
+
+        // Check if player BECAME irrelevant (moved out of map)
+        if (!IsPlayerRelevant(newP))
+        {
+            _world.DestroyEntity(entityId);
+            _playerEntityMap.Remove(oldIdentityStr);
+            return;
         }
 
         var entity = _world.GetEntity(entityId);
@@ -151,6 +237,7 @@ public class SyncSystem : ISystem
         if (pComp != null)
         {
             pComp.IsDowned = newP.IsDowned;
+            pComp.LastInputSequence = newP.LastInputSequence;
         }
         
         if (oldP.IsDowned != newP.IsDowned)

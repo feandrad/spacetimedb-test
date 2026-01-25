@@ -40,7 +40,12 @@ public class Game
             _state = GameState.Login;
             Console.WriteLine($"[Game] {_errorMessage}");
         }; 
-
+        _client.OnDisconnected += () =>
+        {
+             _errorMessage = "Disconnected from Server.";
+             _state = GameState.Login;
+             Console.WriteLine($"[Game] {_errorMessage}");
+        };
         // 2. Setup ECS
         _world = new GameWorld();
 
@@ -226,7 +231,7 @@ public class Game
          Console.WriteLine($"[Game] Joining as {player.UsernameDisplay}...");
          if (_lastLoadedMap != player.CurrentMapId)
          {
-             _client?.SubscribeToMap(player.CurrentMapId);
+             _client?.SubscribeToMap(player.CurrentMapId, player.Id);
              _lastLoadedMap = player.CurrentMapId;
          }
          _state = GameState.Playing;
