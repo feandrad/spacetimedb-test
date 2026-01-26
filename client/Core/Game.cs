@@ -228,12 +228,9 @@ public class Game
 
     private void JoinGame(Player player)
     {
-         Console.WriteLine($"[Game] Joining as {player.UsernameDisplay}...");
-         if (_lastLoadedMap != player.CurrentMapId)
-         {
-             _client?.SubscribeToMap(player.CurrentMapId, player.Id);
-             _lastLoadedMap = player.CurrentMapId;
-         }
+         Console.WriteLine($"[Game] Entrando no mundo como {player.UsernameDisplay}...");
+         _client?.SubscribeToMap(player.CurrentMapId, player.Id);
+         _lastLoadedMap = player.CurrentMapId;
          _state = GameState.Playing;
     }
 

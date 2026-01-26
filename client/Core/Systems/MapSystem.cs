@@ -60,12 +60,12 @@ public class MapSystem : ISystem
     {
         CurrentMapId = newMapId;
 
-        // Subscription Management
-        // Get our ID to stay subscribed
-        var me = _repo.GetLocalPlayer();
-        uint? myId = me?.Id;
+        IsJoining = true;
+        MapWidth = 0;
+        MapHeight = 0;
 
-        _client.SubscribeToMap(newMapId, myId);
+        var me = _repo.GetLocalPlayer();
+        _client.SubscribeToMap(newMapId, me?.Id);
 
         OnMapChanged?.Invoke(newMapId);
     }
