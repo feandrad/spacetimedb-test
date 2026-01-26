@@ -26,6 +26,15 @@ namespace SpacetimeDB.Types
 
             public readonly IdUniqueIndex Id;
 
+            public sealed class IdentityUniqueIndex : UniqueIndexBase<SpacetimeDB.Identity>
+            {
+                protected override SpacetimeDB.Identity GetKey(Player row) => row.Identity;
+
+                public IdentityUniqueIndex(PlayerHandle table) : base(table) { }
+            }
+
+            public readonly IdentityUniqueIndex Identity;
+
             public sealed class UsernameCanonicalUniqueIndex : UniqueIndexBase<string>
             {
                 protected override string GetKey(Player row) => row.UsernameCanonical;
@@ -38,6 +47,7 @@ namespace SpacetimeDB.Types
             internal PlayerHandle(DbConnection conn) : base(conn)
             {
                 Id = new(this);
+                Identity = new(this);
                 UsernameCanonical = new(this);
             }
 

@@ -92,7 +92,6 @@ public sealed class GuildmasterClient
     
     public void SubscribeToMap(string mapId, uint? localPlayerId = null)
     {
-        // Subscribe to map-specific entities + Local Player explicitly
         var queries = new List<string>
         {
             $"SELECT * FROM player WHERE current_map_id = '{mapId}'",
@@ -100,8 +99,7 @@ public sealed class GuildmasterClient
             $"SELECT * FROM interactable_object WHERE map_id = '{mapId}'",
             $"SELECT * FROM map_instance WHERE key_id = '{mapId}'"
         };
-        
-        // Ensure we always track ourselves so we don't return null in GetLocalPlayer()
+
         if (localPlayerId.HasValue)
         {
             queries.Add($"SELECT * FROM player WHERE id = {localPlayerId.Value}");
@@ -109,7 +107,8 @@ public sealed class GuildmasterClient
 
         Connection.SubscriptionBuilder()
             .OnApplied(ctx => {
-                Console.WriteLine($"Map data for {mapId} loaded successfully!");
+                // MUDANÇA: Agora o log reflete a realidade técnica.
+                Console.WriteLine($"[Sync] Inscrição ativa para {mapId}. Aguardando dados de instância do servidor...");
             })
             .OnError((ctx, ex) => {
                 Console.WriteLine($"Subscription error: {ex.Message}");

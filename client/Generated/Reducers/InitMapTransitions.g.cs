@@ -12,17 +12,17 @@ namespace SpacetimeDB.Types
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void GetPlayersInMapHandler(ReducerEventContext ctx, string mapId);
-        public event GetPlayersInMapHandler? OnGetPlayersInMap;
+        public delegate void InitMapTransitionsHandler(ReducerEventContext ctx);
+        public event InitMapTransitionsHandler? OnInitMapTransitions;
 
-        public void GetPlayersInMap(string mapId)
+        public void InitMapTransitions()
         {
-            conn.InternalCallReducer(new Reducer.GetPlayersInMap(mapId), this.SetCallReducerFlags.GetPlayersInMapFlags);
+            conn.InternalCallReducer(new Reducer.InitMapTransitions(), this.SetCallReducerFlags.InitMapTransitionsFlags);
         }
 
-        public bool InvokeGetPlayersInMap(ReducerEventContext ctx, Reducer.GetPlayersInMap args)
+        public bool InvokeInitMapTransitions(ReducerEventContext ctx, Reducer.InitMapTransitions args)
         {
-            if (OnGetPlayersInMap == null)
+            if (OnInitMapTransitions == null)
             {
                 if (InternalOnUnhandledReducerError != null)
                 {
@@ -34,9 +34,8 @@ namespace SpacetimeDB.Types
                 }
                 return false;
             }
-            OnGetPlayersInMap(
-                ctx,
-                args.MapId
+            OnInitMapTransitions(
+                ctx
             );
             return true;
         }
@@ -46,28 +45,15 @@ namespace SpacetimeDB.Types
     {
         [SpacetimeDB.Type]
         [DataContract]
-        public sealed partial class GetPlayersInMap : Reducer, IReducerArgs
+        public sealed partial class InitMapTransitions : Reducer, IReducerArgs
         {
-            [DataMember(Name = "map_id")]
-            public string MapId;
-
-            public GetPlayersInMap(string MapId)
-            {
-                this.MapId = MapId;
-            }
-
-            public GetPlayersInMap()
-            {
-                this.MapId = "";
-            }
-
-            string IReducerArgs.ReducerName => "get_players_in_map";
+            string IReducerArgs.ReducerName => "init_map_transitions";
         }
     }
 
     public sealed partial class SetReducerFlags
     {
-        internal CallReducerFlags GetPlayersInMapFlags;
-        public void GetPlayersInMap(CallReducerFlags flags) => GetPlayersInMapFlags = flags;
+        internal CallReducerFlags InitMapTransitionsFlags;
+        public void InitMapTransitions(CallReducerFlags flags) => InitMapTransitionsFlags = flags;
     }
 }

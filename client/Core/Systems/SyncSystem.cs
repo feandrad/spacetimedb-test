@@ -332,24 +332,20 @@ public class SyncSystem : ISystem
     
     private void HandleTransitionInsert(EventContext ctx, MapTransition t)
     {
-        // Only spawn if relevant for current map
-        if (t.MapId != _mapSystem.CurrentMapId) return;
-        
         if (_transitionEntityMap.ContainsKey(t.Id)) return;
 
         var entity = _world.CreateEntity();
         _transitionEntityMap[t.Id] = entity.Id;
-        
+
         entity.AddComponent(new PositionComponent { Position = new Vector2(t.X, t.Y) });
-        
-        entity.AddComponent(new RenderComponent { 
-            IsCircle = false, 
+        entity.AddComponent(new RenderComponent {
+            IsCircle = false,
             Color = Color.Brown,
             Width = t.Width,
             Height = t.Height
         });
-        
-        Console.WriteLine($"[Sync] Transition Spawned: To {t.DestMapId} at ({t.X}, {t.Y})");
+
+        Console.WriteLine($"[Sync] Área de Transição criada: ID {t.Id} em ({t.X}, {t.Y}) para {t.DestMapId}");
     }
     
     private void RegisterInteractableEvents(DbConnection conn)

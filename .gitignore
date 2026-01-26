@@ -3,3 +3,4 @@
 .idea/
 client/bin/
 server/target/
+/server/target/
