@@ -20,6 +20,7 @@ public class SyncSystem : ISystem
 
     private readonly Dictionary<string, int> _playerEntityMap = new();
     private readonly Dictionary<uint, int> _enemyEntityMap = new();
+    private readonly Dictionary<uint, int> _transitionEntityMap = new();
 
     public SyncSystem(GameWorld world, NetworkSystem network, GuildmasterClient client, MapSystem mapSystem)
     {
@@ -33,6 +34,26 @@ public class SyncSystem : ISystem
     private void OnMapChanged(string mapId)
     {
         RefreshPlayers();
+        RefreshTransitions();
+    }
+
+    private void RefreshTransitions()
+    {
+        // Clear old transitions
+        foreach (var id in _transitionEntityMap.Values)
+        {
+            _world.DestroyEntity(id);
+        }
+        _transitionEntityMap.Clear();
+        
+        var conn = _network.GetConnection();
+        if (conn == null) return;
+
+        // Add new transitions
+        foreach (var t in conn.Db.MapTransition.Iter())
+        {
+            HandleTransitionInsert(null!, t);
+        }
     }
 
     private void RefreshPlayers()
@@ -127,6 +148,7 @@ public class SyncSystem : ISystem
             foreach (var p in conn.Db.Player.Iter()) HandlePlayerInsert(null!, p);
             foreach (var e in conn.Db.Enemy.Iter()) HandleEnemyInsert(null!, e);
             foreach (var m in conn.Db.MapInstance.Iter()) HandleMapInsert(null!, m);
+            foreach (var t in conn.Db.MapTransition.Iter()) HandleTransitionInsert(null!, t);
             foreach (var i in conn.Db.InteractableObject.Iter()) HandleInteractableInsert(null!, i);
         }
     }
@@ -305,6 +327,29 @@ public class SyncSystem : ISystem
     {
         conn.Db.MapInstance.OnInsert += HandleMapInsert;
         conn.Db.MapInstance.OnUpdate += HandleMapUpdate;
+        conn.Db.MapTransition.OnInsert += HandleTransitionInsert;
+    }
+    
+    private void HandleTransitionInsert(EventContext ctx, MapTransition t)
+    {
+        // Only spawn if relevant for current map
+        if (t.MapId != _mapSystem.CurrentMapId) return;
+        
+        if (_transitionEntityMap.ContainsKey(t.Id)) return;
+
+        var entity = _world.CreateEntity();
+        _transitionEntityMap[t.Id] = entity.Id;
+        
+        entity.AddComponent(new PositionComponent { Position = new Vector2(t.X, t.Y) });
+        
+        entity.AddComponent(new RenderComponent { 
+            IsCircle = false, 
+            Color = Color.Brown,
+            Width = t.Width,
+            Height = t.Height
+        });
+        
+        Console.WriteLine($"[Sync] Transition Spawned: To {t.DestMapId} at ({t.X}, {t.Y})");
     }
     
     private void RegisterInteractableEvents(DbConnection conn)

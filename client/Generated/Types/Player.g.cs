@@ -39,6 +39,8 @@ namespace SpacetimeDB.Types
         public bool IsDowned;
         [DataMember(Name = "last_input_sequence")]
         public uint LastInputSequence;
+        [DataMember(Name = "last_transition_time")]
+        public SpacetimeDB.Timestamp LastTransitionTime;
 
         public Player(
             uint Id,
@@ -53,7 +55,8 @@ namespace SpacetimeDB.Types
             float Health,
             float MaxHealth,
             bool IsDowned,
-            uint LastInputSequence
+            uint LastInputSequence,
+            SpacetimeDB.Timestamp LastTransitionTime
         )
         {
             this.Id = Id;
@@ -69,6 +72,7 @@ namespace SpacetimeDB.Types
             this.MaxHealth = MaxHealth;
             this.IsDowned = IsDowned;
             this.LastInputSequence = LastInputSequence;
+            this.LastTransitionTime = LastTransitionTime;
         }
 
         public Player()

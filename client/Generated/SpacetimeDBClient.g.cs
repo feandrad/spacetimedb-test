@@ -33,6 +33,7 @@ namespace SpacetimeDB.Types
             AddTable(InteractableObject = new(conn));
             AddTable(InventoryItem = new(conn));
             AddTable(MapInstance = new(conn));
+            AddTable(MapTransition = new(conn));
             AddTable(Player = new(conn));
             AddTable(PlayerEquipment = new(conn));
             AddTable(Projectile = new(conn));
@@ -620,6 +621,7 @@ namespace SpacetimeDB.Types
                 "give_arrows_to_player" => BSATNHelpers.Decode<Reducer.GiveArrowsToPlayer>(encodedArgs),
                 "heal_player" => BSATNHelpers.Decode<Reducer.HealPlayer>(encodedArgs),
                 "health_check" => BSATNHelpers.Decode<Reducer.HealthCheck>(encodedArgs),
+                "init_map_transitions" => BSATNHelpers.Decode<Reducer.InitMapTransitions>(encodedArgs),
                 "list_resources_by_type" => BSATNHelpers.Decode<Reducer.ListResourcesByType>(encodedArgs),
                 "on_connect" => BSATNHelpers.Decode<Reducer.OnConnect>(encodedArgs),
                 "on_disconnect" => BSATNHelpers.Decode<Reducer.OnDisconnect>(encodedArgs),
@@ -690,6 +692,7 @@ namespace SpacetimeDB.Types
                 Reducer.GiveArrowsToPlayer args => Reducers.InvokeGiveArrowsToPlayer(eventContext, args),
                 Reducer.HealPlayer args => Reducers.InvokeHealPlayer(eventContext, args),
                 Reducer.HealthCheck args => Reducers.InvokeHealthCheck(eventContext, args),
+                Reducer.InitMapTransitions args => Reducers.InvokeInitMapTransitions(eventContext, args),
                 Reducer.ListResourcesByType args => Reducers.InvokeListResourcesByType(eventContext, args),
                 Reducer.OnConnect args => Reducers.InvokeOnConnect(eventContext, args),
                 Reducer.OnDisconnect args => Reducers.InvokeOnDisconnect(eventContext, args),

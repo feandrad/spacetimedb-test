@@ -8,5 +8,7 @@ public class RenderComponent : Component
     public Color Color { get; set; }
     public float Radius { get; set; } = 15f;
     // Simple shape type for MVP
-    public bool IsCircle { get; set; } = true; 
+    public bool IsCircle { get; set; } = true;
+    public float Width { get; set; }
+    public float Height { get; set; } 
 }

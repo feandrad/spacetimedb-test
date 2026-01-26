@@ -71,6 +71,10 @@ public class RenderSystem : ISystem
                 {
                     Raylib.DrawCircle((int)pos.Position.X, (int)pos.Position.Y, render.Radius, render.Color);
                 }
+                else
+                {
+                    Raylib.DrawRectangle((int)pos.Position.X, (int)pos.Position.Y, (int)render.Width, (int)render.Height, render.Color);
+                }
                 
                 // Draw Name if Player
                 var player = entity.GetComponent<PlayerComponent>();
