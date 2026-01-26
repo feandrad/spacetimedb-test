@@ -97,7 +97,8 @@ public sealed class GuildmasterClient
             $"SELECT * FROM player WHERE current_map_id = '{mapId}'",
             $"SELECT * FROM enemy WHERE map_id = '{mapId}'",
             $"SELECT * FROM interactable_object WHERE map_id = '{mapId}'",
-            $"SELECT * FROM map_instance WHERE key_id = '{mapId}'"
+            $"SELECT * FROM map_instance WHERE key_id = '{mapId}'",
+            $"SELECT * FROM map_transition WHERE map_id = '{mapId}'"
         };
 
         if (localPlayerId.HasValue)
