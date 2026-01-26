@@ -1,6 +1,6 @@
 # Guildmaster MVP
 
-Guildmaster is a multiplayer management simulation and adventure game where players manage a tavern, explore the world, and build their guild. It supports cooperative multiplayer for up to 4 players.
+Guildmaster is a multiplayer management simulation and adventure game where players manage a tavern, explore the world, and build their guild. It supports cooperative multiplayer.
 
 ## Architecture
 
