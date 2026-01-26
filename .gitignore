@@ -2,5 +2,5 @@
 .godot/
 .idea/
 client/bin/
+client/obj/
 server/target/
-/server/target/
