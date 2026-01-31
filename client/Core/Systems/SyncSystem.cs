@@ -142,6 +142,7 @@ public class SyncSystem : ISystem
             foreach (var p in conn.Db.Player.Iter()) HandlePlayerInsert(null!, p);
             foreach (var e in conn.Db.Enemy.Iter()) HandleEnemyInsert(null!, e);
             foreach (var m in conn.Db.MapInstance.Iter()) HandleMapInsert(null!, m);
+            foreach (var t in conn.Db.MapTemplate.Iter()) HandleTemplateInsert(null!, t);
             foreach (var t in conn.Db.MapTransition.Iter()) HandleTransitionInsert(null!, t);
             foreach (var i in conn.Db.InteractableObject.Iter()) HandleInteractableInsert(null!, i);
         }
@@ -199,6 +200,21 @@ public class SyncSystem : ISystem
         conn.Db.MapInstance.OnUpdate += HandleMapUpdate;
         conn.Db.MapTransition.OnInsert += HandleTransitionInsert;
         conn.Db.MapTransition.OnDelete += HandleTransitionDelete;
+        conn.Db.MapTemplate.OnInsert += HandleTemplateInsert;
+    }
+
+    private void HandleTemplateInsert(EventContext ctx, MapTemplate t)
+    {
+        // Se já temos uma instância ativa que usa esse template, avisamos o MapSystem
+        var conn = _network.GetConnection();
+        var instance = conn?.Db.MapInstance.Iter().FirstOrDefault(i => i.TemplateName == t.Name);
+
+        if (instance != null)
+        {
+            // Reconstrói a string "WxH" para manter compatibilidade com o MapSystem atual
+            string dims = $"{t.Width}x{t.Height}";
+            _mapSystem.UpdateMapInfo(instance.KeyId, dims);
+        }
     }
 
     private void HandleTransitionDelete(EventContext ctx, MapTransition t)
@@ -391,11 +407,30 @@ public class SyncSystem : ISystem
 
     private void HandleMapInsert(EventContext ctx, MapInstance m)
     {
-        _mapSystem.UpdateMapInfo(m.KeyId, m.Metadata);
+        var conn = _network.GetConnection();
+        var template = conn?.Db.MapTemplate.Iter().FirstOrDefault(t => t.Name == m.TemplateName);
+
+        if (template != null)
+        {
+            string dims = $"{template.Width}x{template.Height}";
+            _mapSystem.UpdateMapInfo(m.KeyId, dims);
+        }
+        else
+        {
+            Console.WriteLine($"[Sync] Instância '{m.KeyId}' recebida, aguardando template '{m.TemplateName}'...");
+        }
     }
+
     private void HandleMapUpdate(EventContext ctx, MapInstance oldM, MapInstance newM)
     {
-        _mapSystem.UpdateMapInfo(newM.KeyId, newM.Metadata);
+        var conn = _network.GetConnection();
+        var template = conn?.Db.MapTemplate.Iter().FirstOrDefault(t => t.Name == newM.TemplateName);
+
+        if (template != null)
+        {
+            string dims = $"{template.Width}x{template.Height}";
+            _mapSystem.UpdateMapInfo(newM.KeyId, dims);
+        }
     }
 
     private void HandleInteractableInsert(EventContext ctx, InteractableObject i)

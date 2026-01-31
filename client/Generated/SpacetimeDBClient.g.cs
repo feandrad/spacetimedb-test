@@ -33,12 +33,14 @@ namespace SpacetimeDB.Types
             AddTable(InteractableObject = new(conn));
             AddTable(InventoryItem = new(conn));
             AddTable(MapInstance = new(conn));
+            AddTable(MapTemplate = new(conn));
             AddTable(MapTransition = new(conn));
             AddTable(Player = new(conn));
             AddTable(PlayerEquipment = new(conn));
             AddTable(Projectile = new(conn));
             AddTable(ResourceIdMapping = new(conn));
             AddTable(ResourceRegistry = new(conn));
+            AddTable(WorldMutation = new(conn));
         }
     }
 
@@ -628,6 +630,7 @@ namespace SpacetimeDB.Types
                 "register_resource" => BSATNHelpers.Decode<Reducer.RegisterResource>(encodedArgs),
                 "remove_enemy" => BSATNHelpers.Decode<Reducer.RemoveEnemy>(encodedArgs),
                 "remove_resource" => BSATNHelpers.Decode<Reducer.RemoveResource>(encodedArgs),
+                "replace_all_templates" => BSATNHelpers.Decode<Reducer.ReplaceAllTemplates>(encodedArgs),
                 "revive_player" => BSATNHelpers.Decode<Reducer.RevivePlayer>(encodedArgs),
                 "set_player_max_health" => BSATNHelpers.Decode<Reducer.SetPlayerMaxHealth>(encodedArgs),
                 "spawn_enemy" => BSATNHelpers.Decode<Reducer.SpawnEnemy>(encodedArgs),
@@ -695,6 +698,7 @@ namespace SpacetimeDB.Types
                 Reducer.RegisterResource args => Reducers.InvokeRegisterResource(eventContext, args),
                 Reducer.RemoveEnemy args => Reducers.InvokeRemoveEnemy(eventContext, args),
                 Reducer.RemoveResource args => Reducers.InvokeRemoveResource(eventContext, args),
+                Reducer.ReplaceAllTemplates args => Reducers.InvokeReplaceAllTemplates(eventContext, args),
                 Reducer.RevivePlayer args => Reducers.InvokeRevivePlayer(eventContext, args),
                 Reducer.SetPlayerMaxHealth args => Reducers.InvokeSetPlayerMaxHealth(eventContext, args),
                 Reducer.SpawnEnemy args => Reducers.InvokeSpawnEnemy(eventContext, args),

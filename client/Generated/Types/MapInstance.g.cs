@@ -21,29 +21,29 @@ namespace SpacetimeDB.Types
         public string State;
         [DataMember(Name = "player_count")]
         public uint PlayerCount;
-        [DataMember(Name = "metadata")]
-        public string Metadata;
+        [DataMember(Name = "template_name")]
+        public string TemplateName;
 
         public MapInstance(
             uint Id,
             string KeyId,
             string State,
             uint PlayerCount,
-            string Metadata
+            string TemplateName
         )
         {
             this.Id = Id;
             this.KeyId = KeyId;
             this.State = State;
             this.PlayerCount = PlayerCount;
-            this.Metadata = Metadata;
+            this.TemplateName = TemplateName;
         }
 
         public MapInstance()
         {
             this.KeyId = "";
             this.State = "";
-            this.Metadata = "";
+            this.TemplateName = "";
         }
     }
 }
