@@ -25,25 +25,6 @@ public class MapSystem : ISystem
 
     public bool IsJoining { get; private set; } = true;
 
-    public void UpdateMapInfo(string mapId, string metadata)
-    {
-        // Se o metadata for "{}" ou vazio, NÃO mude IsJoining para false.
-        if (string.IsNullOrEmpty(metadata) || metadata == "{}")
-        {
-            Console.Error.WriteLine($"[MapSystem] AVISO: Recebi instância de '{mapId}', mas o metadata está vazio.");
-            return;
-        }
-
-        var parts = metadata.Split('x');
-        if (parts.Length == 2 && int.TryParse(parts[0], out int w) && int.TryParse(parts[1], out int h))
-        {
-            MapWidth = w;
-            MapHeight = h;
-            IsJoining = false; // AGORA o jogo realmente começou
-            Console.WriteLine($"[MapSystem] SUCESSO REAL: Mapa '{mapId}' sincronizado ({w}x{h}).");
-        }
-    }
-
     public void Update(float deltaTime)
     {
         var me = _repo.GetLocalPlayer();
@@ -51,6 +32,7 @@ public class MapSystem : ISystem
 
         if (me.CurrentMapId != CurrentMapId)
         {
+            Console.WriteLine($"[MapSystem] TRIGGER CHANGE MAP: PlayerMap='{me.CurrentMapId}' != CurrentMapId='{CurrentMapId}'");
             ChangeMap(me.CurrentMapId);
         }
     }
@@ -59,6 +41,7 @@ public class MapSystem : ISystem
 
     private void ChangeMap(string newMapId)
     {
+        Console.WriteLine($"[MapSystem] ChangeMap START: '{newMapId}'. IsJoining=true");
         CurrentMapId = newMapId;
 
         IsJoining = true;
@@ -76,9 +59,9 @@ public class MapSystem : ISystem
     {
         MapWidth = width;
         MapHeight = height;
-        TileData = tiles; // Salva os dados dos tiles
+        TileData = new List<uint>(tiles); // Salva os dados dos tiles
         IsJoining = false;
 
-        Console.WriteLine($"[MapSystem] Mapa carregado: {width}x{height} com {tiles.Count} tiles.");
+        Console.WriteLine($"[MapSystem] LoadMapData: {width}x{height} com {tiles.Count} tiles. IsJoining=false");
     }
 }

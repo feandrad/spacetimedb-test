@@ -106,11 +106,30 @@ pub fn register_player(ctx: &ReducerContext, username_display: String) -> Result
 
         p.identity = identity;
 
-        // Força spawn seguro para evitar o void
-        let (spawn_x, spawn_y) = map::get_spawn_point(ctx, STARTING_MAP);
-        p.current_map_id = STARTING_MAP.to_string();
-        p.position_x = spawn_x;
-        p.position_y = spawn_y;
+        // Lógica de Reclaim (Recuperar usuário antigo)
+        // VERIFICAR: O mapa onde ele estava ainda é válido?
+        let map_valid = map::get_or_create_map_instance(ctx, &p.current_map_id).is_some();
+        
+        let mut position_valid = false;
+        if map_valid {
+            let (min_x, max_x, min_y, max_y) = map::get_map_bounds_from_db(ctx, &p.current_map_id);
+            if p.position_x >= min_x && p.position_x <= max_x && 
+               p.position_y >= min_y && p.position_y <= max_y {
+                position_valid = true;
+            }
+        }
+
+        if position_valid {
+             log::info!("🔙 Reclaim: Player {} restored at {} ({}, {})", 
+                p.username_display, p.current_map_id, p.position_x, p.position_y);
+        } else {
+            // Fallback: Reset para Spawn
+             log::warn!("⚠️ Reclaim: Player {} had invalid pos/map. Resetting to spawn.", p.username_display);
+            let (spawn_x, spawn_y) = map::get_spawn_point(ctx, STARTING_MAP);
+            p.current_map_id = STARTING_MAP.to_string();
+            p.position_x = spawn_x;
+            p.position_y = spawn_y;
+        }
 
         ctx.db.player().insert(p);
 
