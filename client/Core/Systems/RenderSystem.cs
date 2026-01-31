@@ -11,6 +11,8 @@ public class RenderSystem : ISystem
     private Texture2D _tilesetTexture;
     private const int TILE_SIZE = 8;
     private const int TILESET_COLUMNS = 8;
+    private const float SCALE = 4.0f;
+
     private readonly GameWorld _world;
     private readonly MapSystem _mapSystem;
     private readonly DbConnection? _conn; 
@@ -41,8 +43,8 @@ public class RenderSystem : ISystem
             
             if (player != null && player.IsLocalPlayer && pos != null)
             {
-                // Update camera target
-                _camera.Target = pos.Position;
+                Vector2 visualTarget = pos.Position * SCALE;
+                _camera.Target = new Vector2((int)visualTarget.X, (int)visualTarget.Y);
                 break;
             }
         }
@@ -78,7 +80,7 @@ public class RenderSystem : ISystem
     private void DrawMap()
     {
         var tiles = _mapSystem.TileData;
-        int width = _mapSystem.MapWidth;
+        int width = _mapSystem.MapWidth; // Largura em TILES (ex: 50)
 
         if (width == 0) return;
 
@@ -86,18 +88,24 @@ public class RenderSystem : ISystem
         {
             uint tileId = tiles[i];
 
-            // Posição no Mundo (Tela)
-            int mapX = (i % width) * TILE_SIZE;
-            int mapY = (i / width) * TILE_SIZE;
+            // Calcular posição no Grid
+            int gridX = i % width;
+            int gridY = i / width;
 
-            // Recorte da Imagem (Assets.png)
+            // 1. Recorte da Imagem (Source) - Mantém 8x8 original
             int srcX = (int)(tileId % TILESET_COLUMNS) * TILE_SIZE;
             int srcY = (int)(tileId / TILESET_COLUMNS) * TILE_SIZE;
-
             Rectangle source = new Rectangle(srcX, srcY, TILE_SIZE, TILE_SIZE);
-            Vector2 dest = new Vector2(mapX, mapY);
 
-            Raylib.DrawTextureRec(_tilesetTexture, source, dest, Color.White);
+            Rectangle dest = new Rectangle(
+                gridX * TILE_SIZE * SCALE,
+                gridY * TILE_SIZE * SCALE,
+                TILE_SIZE * SCALE,
+                TILE_SIZE * SCALE
+            );
+
+            // Desenha esticado
+            Raylib.DrawTexturePro(_tilesetTexture, source, dest, Vector2.Zero, 0f, Color.White);
         }
     }
 
@@ -117,9 +125,10 @@ public class RenderSystem : ISystem
 
             if (pos != null && render != null)
             {
+                Vector2 drawPos = pos.Position * SCALE;
                 if (render.IsCircle)
                 {
-                    Raylib.DrawCircle((int)pos.Position.X, (int)pos.Position.Y, render.Radius, render.Color);
+                    Raylib.DrawCircleV(drawPos, render.Radius, render.Color);
                 }
                 else
                 {
