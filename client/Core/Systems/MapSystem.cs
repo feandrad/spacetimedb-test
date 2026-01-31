@@ -9,6 +9,7 @@ public class MapSystem : ISystem
 {
     private readonly GuildmasterClient _client;
     private readonly PlayerRepository _repo;
+    public List<uint> TileData { get; private set; } = new();
     
     public int MapWidth { get; private set; } = 0;
     public int MapHeight { get; private set; } = 0;
@@ -63,10 +64,21 @@ public class MapSystem : ISystem
         IsJoining = true;
         MapWidth = 0;
         MapHeight = 0;
+        TileData.Clear();
 
         var me = _repo.GetLocalPlayer();
         _client.SubscribeToMap(newMapId, me?.Id);
 
         OnMapChanged?.Invoke(newMapId);
+    }
+
+    public void LoadMapData(string mapId, int width, int height, List<uint> tiles)
+    {
+        MapWidth = width;
+        MapHeight = height;
+        TileData = tiles; // Salva os dados dos tiles
+        IsJoining = false;
+
+        Console.WriteLine($"[MapSystem] Mapa carregado: {width}x{height} com {tiles.Count} tiles.");
     }
 }

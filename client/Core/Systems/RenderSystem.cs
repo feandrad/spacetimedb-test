@@ -8,8 +8,11 @@ namespace Guildmaster.Client.Core.Systems;
 
 public class RenderSystem : ISystem
 {
+    private Texture2D _tilesetTexture;
+    private const int TILE_SIZE = 8;
+    private const int TILESET_COLUMNS = 8;
     private readonly GameWorld _world;
-    private readonly MapSystem _mapSystem; // Added dependency
+    private readonly MapSystem _mapSystem;
     private readonly DbConnection? _conn; 
 
     private Camera2D _camera;
@@ -23,7 +26,9 @@ public class RenderSystem : ISystem
         _camera = new Camera2D();
         _camera.Zoom = 1.0f;
         _camera.Rotation = 0.0f;
-        _camera.Offset = new Vector2(400, 225); // Center of 800x450
+        _camera.Offset = new Vector2(400, 225);
+
+        _tilesetTexture = Raylib.LoadTexture("Assets/assets.png");
     }
 
     public void Update(float deltaTime) 
@@ -64,9 +69,36 @@ public class RenderSystem : ISystem
         Raylib.ClearBackground(Color.Black);
         Raylib.BeginMode2D(_camera);
 
-        DrawWorldState(); // Encapsula a lógica de Grid e Entidades
+        DrawMap();
+        DrawEntities();
 
         Raylib.EndMode2D();
+    }
+
+    private void DrawMap()
+    {
+        var tiles = _mapSystem.TileData;
+        int width = _mapSystem.MapWidth;
+
+        if (width == 0) return;
+
+        for (int i = 0; i < tiles.Count; i++)
+        {
+            uint tileId = tiles[i];
+
+            // Posição no Mundo (Tela)
+            int mapX = (i % width) * TILE_SIZE;
+            int mapY = (i / width) * TILE_SIZE;
+
+            // Recorte da Imagem (Assets.png)
+            int srcX = (int)(tileId % TILESET_COLUMNS) * TILE_SIZE;
+            int srcY = (int)(tileId / TILESET_COLUMNS) * TILE_SIZE;
+
+            Rectangle source = new Rectangle(srcX, srcY, TILE_SIZE, TILE_SIZE);
+            Vector2 dest = new Vector2(mapX, mapY);
+
+            Raylib.DrawTextureRec(_tilesetTexture, source, dest, Color.White);
+        }
     }
 
     private void RenderOverlay(string title, Color color, string sub = "")
@@ -76,18 +108,8 @@ public class RenderSystem : ISystem
         if (!string.IsNullOrEmpty(sub)) Raylib.DrawText(sub, 250, 230, 10, Color.Gray);
     }
 
-    public void DrawWorldState()
+    public void DrawEntities()
     {
-        // Área Móvel (Verde Escuro) - Agora garantido que MapWidth > 0
-        Raylib.DrawRectangle(0, 0, _mapSystem.MapWidth, _mapSystem.MapHeight, new Color(30, 40, 30, 255));
-
-        // Grid
-        for(int x = 0; x <= _mapSystem.MapWidth; x+=50)
-            Raylib.DrawLine(x, 0, x, _mapSystem.MapHeight, new Color(50, 60, 50, 255));
-        for(int y = 0; y <= _mapSystem.MapHeight; y+=50)
-            Raylib.DrawLine(0, y, _mapSystem.MapWidth, y, new Color(50, 60, 50, 255));
-
-        // Desenhar Entidades
         foreach (var entity in _world.GetEntities())
         {
             var pos = entity.GetComponent<PositionComponent>();
@@ -104,8 +126,6 @@ public class RenderSystem : ISystem
                     // Aqui as áreas marrons (transições) serão desenhadas
                     Raylib.DrawRectangle((int)pos.Position.X, (int)pos.Position.Y, (int)render.Width, (int)render.Height, render.Color);
                 }
-
-                // ... (restante do código de UI de Player e Enemy)
             }
         }
     }

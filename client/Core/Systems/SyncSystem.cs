@@ -205,15 +205,12 @@ public class SyncSystem : ISystem
 
     private void HandleTemplateInsert(EventContext ctx, MapTemplate t)
     {
-        // Se já temos uma instância ativa que usa esse template, avisamos o MapSystem
         var conn = _network.GetConnection();
         var instance = conn?.Db.MapInstance.Iter().FirstOrDefault(i => i.TemplateName == t.Name);
 
         if (instance != null)
         {
-            // Reconstrói a string "WxH" para manter compatibilidade com o MapSystem atual
-            string dims = $"{t.Width}x{t.Height}";
-            _mapSystem.UpdateMapInfo(instance.KeyId, dims);
+            _mapSystem.LoadMapData(instance.KeyId, (int)t.Width, (int)t.Height, t.TileData);
         }
     }
 
@@ -334,8 +331,6 @@ public class SyncSystem : ISystem
         }
     }
 
-    // --- Enemy Handlers ---
-
     private void HandleEnemyInsert(EventContext ctx, Enemy e)
     {
         if (_enemyEntityMap.ContainsKey(e.Id)) return;
@@ -412,8 +407,7 @@ public class SyncSystem : ISystem
 
         if (template != null)
         {
-            string dims = $"{template.Width}x{template.Height}";
-            _mapSystem.UpdateMapInfo(m.KeyId, dims);
+            _mapSystem.LoadMapData(m.KeyId, (int)template.Width, (int)template.Height, template.TileData);
         }
         else
         {
@@ -428,8 +422,7 @@ public class SyncSystem : ISystem
 
         if (template != null)
         {
-            string dims = $"{template.Width}x{template.Height}";
-            _mapSystem.UpdateMapInfo(newM.KeyId, dims);
+            _mapSystem.LoadMapData(newM.KeyId, (int)template.Width, (int)template.Height, template.TileData);
         }
     }
 
