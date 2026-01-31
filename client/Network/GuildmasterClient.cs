@@ -20,7 +20,7 @@ public sealed class GuildmasterClient
                 Identity = identity;
                 Console.WriteLine($"[Network] Conectado como {identity} (Efemero)");
                 SubscribeOnlyToMe(identity);
-                conn.Reducers.OnRegisterPlayer += (ctx, name) => { SubscribeToStaticData(); };
+                conn.Reducers.OnRegisterPlayer += (ctx, name) => { };
             })
             .Build();
     }
@@ -37,8 +37,20 @@ public sealed class GuildmasterClient
         Connection?.SubscriptionBuilder().Subscribe(["SELECT * FROM map_template"]);
     }
 
+    private SubscriptionHandle? _activeMapSubscription;
+
     public void SubscribeToMap(string mapId, uint? localPlayerId = null)
     {
+        // Unsubscribe from previous map
+        try
+        {
+            _activeMapSubscription?.Unsubscribe();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Network] Aviso: Falha ao cancelar inscricao anterior (ignorando): {ex.Message}");
+        }
+
         // Esta chamada SUBSTITUI a inscrição do login pela inscrição do mapa real
         var queries = new List<string>
         {
@@ -46,7 +58,8 @@ public sealed class GuildmasterClient
             $"SELECT * FROM enemy WHERE map_id = '{mapId}'",
             $"SELECT * FROM interactable_object WHERE map_id = '{mapId}'",
             $"SELECT * FROM map_instance WHERE key_id = '{mapId}'",
-            $"SELECT * FROM map_transition WHERE map_id = '{mapId}'"
+            $"SELECT * FROM map_transition WHERE map_id = '{mapId}'",
+            "SELECT * FROM map_template"
         };
 
         // Garante que VOCÊ nunca suma, mesmo se o servidor demorar para atualizar seu current_map_id
@@ -55,7 +68,7 @@ public sealed class GuildmasterClient
             queries.Add($"SELECT * FROM player WHERE id = {localPlayerId.Value}");
         }
 
-        Connection?.SubscriptionBuilder()
+        _activeMapSubscription = Connection?.SubscriptionBuilder()
             .OnApplied(ctx => Console.WriteLine($"[Network] Inscrição de mapa ativa: {mapId}"))
             .Subscribe(queries.ToArray());
     }

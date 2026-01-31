@@ -227,7 +227,7 @@ public class Game
     private void JoinGame(Player player)
     {
          Console.WriteLine($"[Game] Entrando no mundo como {player.UsernameDisplay}...");
-         _client?.SubscribeToMap(player.CurrentMapId, player.Id);
+         // _client?.SubscribeToMap(player.CurrentMapId, player.Id); // DEPRECATED: MapSystem handles this via ChangeMap
          _lastLoadedMap = player.CurrentMapId;
          _state = GameState.Playing;
     }
