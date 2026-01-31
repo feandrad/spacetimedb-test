@@ -1,9 +1,9 @@
-use spacetimedb::{reducer, ReducerContext, Table};
+use crate::map::{map_instance, map_template, TILE_SIZE};
 use crate::player;
-use crate::map::{map_instance, MapInstance}; // Importa a trait e a struct
+use spacetimedb::{reducer, ReducerContext, Table};
 
 const MAX_MOVEMENT_SPEED: f32 = 250.0; // pixels per second
-const MAX_POSITION_DELTA: f32 = 50.0; // Maximum position change per update
+const MAX_POSITION_DELTA: f32 = 50.0; // per update
 
 #[reducer]
 pub fn update_player_position(
@@ -28,30 +28,26 @@ pub fn update_player_position(
         return Ok(());
     }
 
-    // BUSCA AUTORITÁRIA: Se não achar a instância, dá ERRO e para tudo.
-    let instance = ctx.db.map_instance().iter()
-        .find(|m| m.key_id == player.current_map_id)
+    // 1. Busca a instância atual onde o player está
+    let instance = ctx.db.map_instance().key_id().find(player.current_map_id.clone())
         .ok_or_else(|| {
-            let err = format!("❌ ERRO CRÍTICO: Instância '{}' não existe na tabela map_instance!", player.current_map_id);
-            log::error!("{}", err);
-            err
+            format!("❌ ERRO CRÍTICO: Instância '{}' não encontrada!", player.current_map_id)
         })?;
 
-    // PARSE DIRETO: Sem valores default escondidos.
-    let parts: Vec<&str> = instance.metadata.split('x').collect();
-    if parts.len() != 2 {
-        let err = format!("❌ ERRO DE DATA: Metadata '{}' do mapa '{}' está malformado!", instance.metadata, instance.key_id);
-        log::error!("{}", err);
-        return Err(err);
-    }
+    // 2. Busca o template (CSV) vinculado a esta instância para saber o tamanho real
+    let template = ctx.db.map_template().name().find(instance.template_name)
+        .ok_or_else(|| "❌ FATAL: Template não encontrado para o cálculo de limites")?;
 
-    let max_x = parts[0].parse::<f32>().map_err(|_| "Width inválido".to_string())?;
-    let max_y = parts[1].parse::<f32>().map_err(|_| "Height inválido".to_string())?;
+    // 3. Define os limites do mundo baseados no CSV (Tiles * 8px)
+    let max_x = template.width as f32 * TILE_SIZE;
+    let max_y = template.height as f32 * TILE_SIZE;
     let (min_x, min_y) = (0.0, 0.0);
 
-    // Validações usando os limites reais vindos da Row do banco
+    // 4. Validações de movimento usando os novos limites numéricos
     let validated_position = validate_movement_bounds(new_x, new_y, min_x, max_x, min_y, max_y);
     let validated_velocity = validate_movement_speed(velocity_x, velocity_y);
+
+    // Evita teleporte (valida se o movimento é fisicamente possível entre frames)
     let (final_x, final_y) = validate_position_delta(
         player.position_x,
         player.position_y,
@@ -59,6 +55,7 @@ pub fn update_player_position(
         validated_position.1
     );
 
+    // 5. Atualização atômica do estado do player
     let mut updated_player = player.clone();
     updated_player.position_x = final_x;
     updated_player.position_y = final_y;
@@ -68,6 +65,7 @@ pub fn update_player_position(
 
     ctx.db.player().id().update(updated_player);
 
+    // 6. Verifica se o player entrou em uma zona de transição
     crate::map::check_map_transition(ctx, player_id)?;
 
     Ok(())

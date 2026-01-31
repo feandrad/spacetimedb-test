@@ -1,8 +1,10 @@
-use spacetimedb::{table, reducer, Identity, ReducerContext, Table, Timestamp};
 use crate::map::get_or_create_map_instance;
+use crate::map::map_template;
+use crate::map::map_transition;
+use crate::map::STARTING_MAP;
+use spacetimedb::{reducer, table, Identity, ReducerContext, Table, Timestamp};
 
 pub mod map;
-use crate::map::map_transition;
 pub mod movement;
 pub mod combat;
 pub mod character;
@@ -49,11 +51,10 @@ pub fn on_connect(ctx: &ReducerContext) {
         player.current_map_id.clone()
     } else {
         log::info!("🆕 New client connected. Preparing starting_area.");
-        "starting_area".to_string()
+        STARTING_MAP.to_string()
     };
 
-    // 2. CRIAÇÃO DA INSTÂNCIA: Aqui o servidor assume a autoridade
-    // e popula a tabela map_instance antes do cliente terminar o subscribe.
+    // Garante que a instância existe
     get_or_create_map_instance(ctx, &map_to_init);
 
     // 3. Auto-init map transitions (Manutenção do seu código original)
@@ -85,57 +86,52 @@ pub fn on_disconnect(ctx: &ReducerContext) {
 pub fn register_player(ctx: &ReducerContext, username_display: String) -> Result<(), String> {
     let identity = ctx.sender;
 
-    // idempotência por identity (você escolhe manter assim)
-    if let Some(_existing) = ctx.db.player().iter().find(|p| p.identity == identity) {
+    // Se já existe por identidade, só atualiza o mapa e retorna
+    if let Some(p) = ctx.db.player().iter().find(|p| p.identity == identity) {
+        let _ = map::update_map_state(ctx, &p.current_map_id); // Garante sync
         return Ok(());
     }
 
     let display = username_display.trim().to_string();
-    if display.is_empty() {
-        return Err("Username cannot be empty".into());
-    }
-
-    // canonical = lowercase + trim
     let canonical = display.to_lowercase();
 
-    // validações simples
-    if canonical.len() < 3 || canonical.len() > 16 {
-        return Err("Username must be between 3 and 16 characters".into());
-    }
-    if !canonical.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-') {
-        return Err("Username has invalid characters".into());
+    if display.is_empty() || canonical.len() < 3 || canonical.len() > 16 {
+        return Err("Invalid username length".into());
     }
 
-    // CHECK FOR EXISTING USER TO RECLAIM
+    // Lógica de Reclaim (Recuperar usuário antigo)
     if let Some(existing_player) = ctx.db.player().iter().find(|p| p.username_canonical == canonical) {
-        log::info!("🔄 Reclaiming player {} (ID: {}) for new identity {:?}", display, existing_player.id, identity);
-        
         let mut p = existing_player.clone();
-        
-        // Remove old entry by ID (Primary Key)
         ctx.db.player().id().delete(&p.id);
-        
-        // Update identity
+
         p.identity = identity;
-        
-        // Insert new entry
+
+        // Força spawn seguro para evitar o void
+        let (spawn_x, spawn_y) = map::get_spawn_point(ctx, STARTING_MAP);
+        p.current_map_id = STARTING_MAP.to_string();
+        p.position_x = spawn_x;
+        p.position_y = spawn_y;
+
         ctx.db.player().insert(p);
-        
+
+        // --- NOVO: Avisa o mapa que chegou gente ---
+        let _ = map::update_map_state(ctx, STARTING_MAP);
+
         return Ok(());
     }
 
-    let player_id = generate_player_id(ctx);
-
+    // Novo Player
+    let (spawn_x, spawn_y) = map::get_spawn_point(ctx, STARTING_MAP);
     let new_player = Player {
-        id: player_id,
+        id: generate_player_id(ctx),
         identity,
         username_canonical: canonical,
         username_display: display,
-        position_x: 100.0,
-        position_y: 500.0,
+        position_x: spawn_x,
+        position_y: spawn_y,
         velocity_x: 0.0,
         velocity_y: 0.0,
-        current_map_id: "starting_area".to_string(),
+        current_map_id: STARTING_MAP.to_string(),
         health: 100.0,
         max_health: 100.0,
         is_downed: false,
@@ -144,6 +140,8 @@ pub fn register_player(ctx: &ReducerContext, username_display: String) -> Result
     };
 
     ctx.db.player().insert(new_player);
+    let _ = map::update_map_state(ctx, STARTING_MAP);
+
     Ok(())
 }
 
@@ -152,69 +150,54 @@ pub fn get_player_info(
     ctx: &ReducerContext,
 ) -> Result<(), String> {
     let identity = ctx.sender;
-    
+
     if let Some(player) = ctx.db.player().iter().find(|p| p.identity == identity) {
-        log::info!("✅ Player authenticated - ID: {}, Username: {}, Map: {}, Position: ({:.1}, {:.1})", 
+        log::info!("✅ Player authenticated - ID: {}, Username: {}, Map: {}, Position: ({:.1}, {:.1})",
                    player.id, player.username_display, player.current_map_id,
                    player.position_x, player.position_y);
     } else {
         log::warn!("❌ No player found for identity {:?}", identity);
     }
-    
+
     Ok(())
 }
 
-// Get map data for rendering
 #[reducer]
-pub fn get_map_data(
-    ctx: &ReducerContext,
-    map_id: String,
-) -> Result<(), String> {
+pub fn get_map_data(ctx: &ReducerContext, map_id: String) -> Result<(), String> {
     let identity = ctx.sender;
-    
-    // Verify player exists
-    if let Some(player) = ctx.db.player().iter().find(|p| p.identity == identity) {
-        log::info!("✅ Map data requested - Player: {}, Map: {}", player.username_display, map_id);
-        
-        // Log map metadata for client
-        let map_info = get_map_metadata(&map_id);
-        log::info!("📍 Map Info - ID: {}, Name: {}, Size: {}x{}, Spawn: ({:.1}, {:.1})", 
-                   map_info.id, map_info.name, map_info.width, map_info.height,
-                   map_info.spawn_x, map_info.spawn_y);
-        
-        // Log players in this map
-        let players_in_map: Vec<Player> = ctx.db.player().iter()
-            .filter(|p| p.current_map_id == map_id)
-            .collect();
-        
-        log::info!("👥 Players in map {}: {}", map_id, players_in_map.len());
-        for p in &players_in_map {
-            log::info!("  - {} (ID: {}) at ({:.1}, {:.1})", 
-                       p.username_display, p.id, p.position_x, p.position_y);
+
+    if let Some(_player) = ctx.db.player().iter().find(|p| p.identity == identity) {
+        if let Some(template) = ctx.db.map_template().name().find(map_id.clone()) {
+            log::info!("📍 Map Info - Name: {}, Size: {}x{}",
+                   template.name, template.width, template.height);
+        } else {
+            log::warn!("⚠️ Mapa '{}' não encontrado nos templates!", map_id);
         }
+
+        // Log players
+        let count = ctx.db.player().iter().filter(|p| p.current_map_id == map_id).count();
+        log::info!("👥 Players no mapa {}: {}", map_id, count);
     } else {
-        log::warn!("❌ Unauthorized map data request from identity {:?}", identity);
         return Err("Player not authenticated".to_string());
     }
-    
+
     Ok(())
 }
 
-// Helper: Generate unique player ID
 fn generate_player_id(ctx: &ReducerContext) -> u32 {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
-    
+
     // Count existing players and use as seed
     let player_count = ctx.db.player().iter().count();
-    
+
     let mut hasher = DefaultHasher::new();
     player_count.hash(&mut hasher);
     // Add some randomness from the context
     ctx.sender.to_hex().hash(&mut hasher);
-    
+
     let base_hash = (hasher.finish() % u32::MAX as u64) as u32;
-    
+
     // Check for collisions
     let mut disambiguation = 0u32;
     loop {
@@ -226,53 +209,11 @@ fn generate_player_id(ctx: &ReducerContext) -> u32 {
     }
 }
 
-// Map metadata structure
-struct MapMetadata {
-    id: String,
-    name: String,
-    width: u32,
-    height: u32,
-    spawn_x: f32,
-    spawn_y: f32,
-}
-
-// Helper: Get map metadata
-fn get_map_metadata(map_id: &str) -> MapMetadata {
-    match map_id {
-        "starting_area" => MapMetadata {
-            id: "starting_area".to_string(),
-            name: "Starting Village".to_string(),
-            width: 1000,
-            height: 1000,
-            spawn_x: 100.0,
-            spawn_y: 500.0,
-        },
-        "forest_area" => MapMetadata {
-            id: "forest_area".to_string(),
-            name: "Dark Forest".to_string(),
-            width: 1200,
-            height: 1200,
-            spawn_x: 100.0,
-            spawn_y: 400.0,
-        },
-        _ => MapMetadata {
-            id: "unknown".to_string(),
-            name: "Unknown Area".to_string(),
-            width: 800,
-            height: 600,
-            spawn_x: 0.0,
-            spawn_y: 0.0,
-        },
-    }
-}
-
-// Health check reducer
 #[reducer]
 pub fn health_check(_ctx: &ReducerContext) {
     log::info!("Guildmaster server health check - OK");
 }
 
-// Test message reducer
 #[reducer]
 pub fn test_message(_ctx: &ReducerContext, message: String) {
     log::info!("Test message: {}", message);

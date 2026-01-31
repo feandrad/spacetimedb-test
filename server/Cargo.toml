@@ -8,5 +8,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 spacetimedb = "1.11.2"
+include_dir = "0.7"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
