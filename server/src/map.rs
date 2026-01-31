@@ -124,14 +124,26 @@ pub fn init(ctx: &ReducerContext) {
 pub fn init_map_transitions(ctx: &ReducerContext) {
     let transitions = vec![
         MapTransition {
-            id: 1, map_id: "starting_area".to_string(),
-            x: 950.0, y: 400.0, width: 50.0, height: 200.0,
-            dest_map_id: "forest_area".to_string(), dest_x: 50.0, dest_y: 500.0,
+            id: 1,
+            map_id: "tavern_outside".to_string(),
+            x: 136.0,   // <--- ALINHADO (17 * 8)
+            y: 168.0,   // <--- ALINHADO (22 * 8)
+            width: 8.0,  // (2 tiles)
+            height: 8.0,  // (1 tile)
+            dest_map_id: "tavern_inside".to_string(),
+            dest_x: 176.0, // Sempre bom nascer alinhado também (4 * 8)
+            dest_y: 88.0,
         },
         MapTransition {
-            id: 2, map_id: "forest_area".to_string(),
-            x: 0.0, y: 400.0, width: 50.0, height: 200.0,
-            dest_map_id: "starting_area".to_string(), dest_x: 900.0, dest_y: 500.0,
+            id: 2,
+            map_id: "tavern_inside".to_string(),
+            x: 176.0,   // <--- ALINHADO (17 * 8)
+            y: 96.0,   // <--- ALINHADO (22 * 8)
+            width: 8.0,  // (2 tiles)
+            height: 8.0,  // (1 tile)
+            dest_map_id: "tavern_outside".to_string(),
+            dest_x: 116.0, // Sempre bom nascer alinhado também (4 * 8)
+            dest_y: 188.0,
         }
     ];
 

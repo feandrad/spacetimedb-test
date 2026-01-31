@@ -132,8 +132,21 @@ public class RenderSystem : ISystem
                 }
                 else
                 {
-                    // Aqui as áreas marrons (transições) serão desenhadas
-                    Raylib.DrawRectangle((int)pos.Position.X, (int)pos.Position.Y, (int)render.Width, (int)render.Height, render.Color);
+                    // TRANSITION ZONES (Retângulos):
+                    float visualWidth = render.Width * SCALE;
+                    float visualHeight = render.Height * SCALE;
+
+                    Raylib.DrawRectangle(
+                        (int)(drawPos.X),
+                        (int)(drawPos.Y),
+                        (int)visualWidth,
+                        (int)visualHeight,
+                        render.Color
+                    );
+
+
+
+//                    Raylib.DrawRectangle((int)pos.Position.X, (int)pos.Position.Y, (int)render.Width, (int)render.Height, render.Color);
                 }
             }
         }

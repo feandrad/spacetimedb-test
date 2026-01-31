@@ -20,7 +20,7 @@ public sealed class GuildmasterClient
                 Identity = identity;
                 Console.WriteLine($"[Network] Conectado como {identity} (Efemero)");
                 SubscribeOnlyToMe(identity);
-                conn.Reducers.OnRegisterPlayer += (ctx, name) => { /* ... lógica de erro ... */ };
+                conn.Reducers.OnRegisterPlayer += (ctx, name) => { SubscribeToStaticData(); };
             })
             .Build();
     }
@@ -32,6 +32,11 @@ public sealed class GuildmasterClient
         Connection?.SubscriptionBuilder().Subscribe([query]);
     }
 
+    private void SubscribeToStaticData()
+    {
+        Connection?.SubscriptionBuilder().Subscribe(["SELECT * FROM map_template"]);
+    }
+
     public void SubscribeToMap(string mapId, uint? localPlayerId = null)
     {
         // Esta chamada SUBSTITUI a inscrição do login pela inscrição do mapa real
@@ -40,7 +45,6 @@ public sealed class GuildmasterClient
             $"SELECT * FROM player WHERE current_map_id = '{mapId}'",
             $"SELECT * FROM enemy WHERE map_id = '{mapId}'",
             $"SELECT * FROM interactable_object WHERE map_id = '{mapId}'",
-            $"SELECT * FROM map_template",
             $"SELECT * FROM map_instance WHERE key_id = '{mapId}'",
             $"SELECT * FROM map_transition WHERE map_id = '{mapId}'"
         };

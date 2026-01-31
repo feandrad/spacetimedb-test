@@ -2,7 +2,7 @@ use crate::map::{map_instance, map_template, TILE_SIZE};
 use crate::player;
 use spacetimedb::{reducer, ReducerContext, Table};
 
-const MAX_MOVEMENT_SPEED: f32 = 250.0; // pixels per second
+const MAX_MOVEMENT_SPEED: f32 = 50.0; // pixels per second
 const MAX_POSITION_DELTA: f32 = 50.0; // per update
 
 #[reducer]

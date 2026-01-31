@@ -165,9 +165,6 @@ public class SyncSystem : ISystem
     private void OnMapChanged(string mapId)
     {
         Console.WriteLine($"[Sync] Mudança de mapa detectada: {mapId}. Limpando entidades locais...");
-
-        // 1. Limpa o ECS visual para evitar fantasmas
-        // Mantemos o dicionário sincronizado com a limpeza do banco local
         ClearAllEntitiesExceptLocal();
     }
 
