@@ -3,7 +3,6 @@ using Guildmaster.Client.Core.Systems;
 using Guildmaster.Client.Network;
 using Guildmaster.Client.Repository;
 using Guildmaster.Client.Input;
-using Guildmaster.Client.Core.Components;
 using SpacetimeDB.Types;
 using Raylib_cs;
 
@@ -56,7 +55,7 @@ public class Game
         // 4. Create Systems (Order matters!)
         var networkSystem = new NetworkSystem(_client);
         var mapSystem = new MapSystem(_client, _playerRepo);
-        var syncSystem = new SyncSystem(_world, networkSystem, _client, mapSystem); // Need to update SyncSystem too!
+        var syncSystem = new SyncSystem(_world, networkSystem, _client, mapSystem); 
         var inputSystem = new InputSystem(_world, inputService, networkSystem);
         var renderSystem = new RenderSystem(_world, mapSystem, _client.Connection);
 
@@ -73,7 +72,6 @@ public class Game
     {
         _client?.Tick();
         _tickDebug++;
-        if (_tickDebug % 120 == 0) Console.WriteLine($"[DEBUG] Game Tick {_tickDebug} - Connected: {_client?.IsConnected}, Identity: {_client?.Identity}");
 
         switch (_state)
         {
