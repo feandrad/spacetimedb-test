@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void GetPlayerPosition(uint playerId)
         {
-            conn.InternalCallReducer(new Reducer.GetPlayerPosition(playerId), this.SetCallReducerFlags.GetPlayerPositionFlags);
+            conn.InternalCallReducer(new Reducer.GetPlayerPosition(playerId));
         }
 
         public bool InvokeGetPlayerPosition(ReducerEventContext ctx, Reducer.GetPlayerPosition args)
@@ -62,11 +62,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "get_player_position";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags GetPlayerPositionFlags;
-        public void GetPlayerPosition(CallReducerFlags flags) => GetPlayerPositionFlags = flags;
     }
 }

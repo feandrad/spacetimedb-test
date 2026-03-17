@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void GetPlayerInfo()
         {
-            conn.InternalCallReducer(new Reducer.GetPlayerInfo(), this.SetCallReducerFlags.GetPlayerInfoFlags);
+            conn.InternalCallReducer(new Reducer.GetPlayerInfo());
         }
 
         public bool InvokeGetPlayerInfo(ReducerEventContext ctx, Reducer.GetPlayerInfo args)
@@ -49,11 +49,5 @@ namespace SpacetimeDB.Types
         {
             string IReducerArgs.ReducerName => "get_player_info";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags GetPlayerInfoFlags;
-        public void GetPlayerInfo(CallReducerFlags flags) => GetPlayerInfoFlags = flags;
     }
 }

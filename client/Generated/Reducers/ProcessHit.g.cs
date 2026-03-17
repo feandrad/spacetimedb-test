@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void ProcessHit(uint attackerId, uint targetId, float damage)
         {
-            conn.InternalCallReducer(new Reducer.ProcessHit(attackerId, targetId, damage), this.SetCallReducerFlags.ProcessHitFlags);
+            conn.InternalCallReducer(new Reducer.ProcessHit(attackerId, targetId, damage));
         }
 
         public bool InvokeProcessHit(ReducerEventContext ctx, Reducer.ProcessHit args)
@@ -74,11 +74,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "process_hit";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags ProcessHitFlags;
-        public void ProcessHit(CallReducerFlags flags) => ProcessHitFlags = flags;
     }
 }

@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void GetResourceByKey(string keyId)
         {
-            conn.InternalCallReducer(new Reducer.GetResourceByKey(keyId), this.SetCallReducerFlags.GetResourceByKeyFlags);
+            conn.InternalCallReducer(new Reducer.GetResourceByKey(keyId));
         }
 
         public bool InvokeGetResourceByKey(ReducerEventContext ctx, Reducer.GetResourceByKey args)
@@ -63,11 +63,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "get_resource_by_key";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags GetResourceByKeyFlags;
-        public void GetResourceByKey(CallReducerFlags flags) => GetResourceByKeyFlags = flags;
     }
 }

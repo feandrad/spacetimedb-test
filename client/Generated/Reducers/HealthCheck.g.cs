@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void HealthCheck()
         {
-            conn.InternalCallReducer(new Reducer.HealthCheck(), this.SetCallReducerFlags.HealthCheckFlags);
+            conn.InternalCallReducer(new Reducer.HealthCheck());
         }
 
         public bool InvokeHealthCheck(ReducerEventContext ctx, Reducer.HealthCheck args)
@@ -49,11 +49,5 @@ namespace SpacetimeDB.Types
         {
             string IReducerArgs.ReducerName => "health_check";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags HealthCheckFlags;
-        public void HealthCheck(CallReducerFlags flags) => HealthCheckFlags = flags;
     }
 }

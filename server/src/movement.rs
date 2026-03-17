@@ -15,7 +15,7 @@ pub fn update_player_position(
     velocity_y: f32,
     input_sequence: u32,
 ) -> Result<(), String> {
-    let identity = ctx.sender;
+    let identity = ctx.sender();
 
     let player = ctx.db.player().id().find(&player_id)
         .ok_or_else(|| "Player not found".to_string())?;
@@ -139,7 +139,7 @@ pub fn force_player_position(
     x: f32,
     y: f32,
 ) -> Result<(), String> {
-    let identity = ctx.sender;
+    let identity = ctx.sender();
     
     // Find the player
     if let Some(player) = ctx.db.player().id().find(&player_id) {

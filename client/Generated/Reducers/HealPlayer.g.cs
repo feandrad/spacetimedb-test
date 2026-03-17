@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void HealPlayer(uint playerId, float healAmount)
         {
-            conn.InternalCallReducer(new Reducer.HealPlayer(playerId, healAmount), this.SetCallReducerFlags.HealPlayerFlags);
+            conn.InternalCallReducer(new Reducer.HealPlayer(playerId, healAmount));
         }
 
         public bool InvokeHealPlayer(ReducerEventContext ctx, Reducer.HealPlayer args)
@@ -69,11 +69,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "heal_player";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags HealPlayerFlags;
-        public void HealPlayer(CallReducerFlags flags) => HealPlayerFlags = flags;
     }
 }

@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void ExecuteAttack(uint playerId, string weaponType, float directionX, float directionY)
         {
-            conn.InternalCallReducer(new Reducer.ExecuteAttack(playerId, weaponType, directionX, directionY), this.SetCallReducerFlags.ExecuteAttackFlags);
+            conn.InternalCallReducer(new Reducer.ExecuteAttack(playerId, weaponType, directionX, directionY));
         }
 
         public bool InvokeExecuteAttack(ReducerEventContext ctx, Reducer.ExecuteAttack args)
@@ -80,11 +80,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "execute_attack";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags ExecuteAttackFlags;
-        public void ExecuteAttack(CallReducerFlags flags) => ExecuteAttackFlags = flags;
     }
 }

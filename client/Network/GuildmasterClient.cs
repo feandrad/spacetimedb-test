@@ -14,13 +14,23 @@ public sealed class GuildmasterClient
     {
         Connection = DbConnection.Builder()
             .WithUri(host)
-            .WithModuleName(moduleName)
+            .WithDatabaseName(moduleName)
             .OnConnect((conn, identity, token) =>
             {
                 Identity = identity;
                 Console.WriteLine($"[Network] Conectado como {identity} (Efemero)");
                 SubscribeOnlyToMe(identity);
                 conn.Reducers.OnRegisterPlayer += (ctx, name) => { };
+            })
+            .OnConnectError((exception) =>
+            {
+                Console.WriteLine($"[Network] Connection error: {exception}");
+                OnConnectionError?.Invoke(exception.ToString());
+            })
+            .OnDisconnect((conn, exception) =>
+            {
+                Console.WriteLine($"[Network] Disconnected: {exception?.Message ?? "clean"}");
+                OnDisconnected?.Invoke();
             })
             .Build();
     }
@@ -59,6 +69,9 @@ public sealed class GuildmasterClient
             $"SELECT * FROM interactable_object WHERE map_id = '{mapId}'",
             $"SELECT * FROM map_instance WHERE key_id = '{mapId}'",
             $"SELECT * FROM map_transition WHERE map_id = '{mapId}'",
+            $"SELECT * FROM container WHERE map_id = '{mapId}'",
+            $"SELECT * FROM container_item",
+            $"SELECT * FROM inventory_item",
             "SELECT * FROM map_template"
         };
 

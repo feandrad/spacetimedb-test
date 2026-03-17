@@ -1,5 +1,6 @@
 use crate::player;
 use include_dir::{include_dir, Dir};
+use serde::Deserialize;
 use spacetimedb::{reducer, table, ReducerContext, Table};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -9,11 +10,18 @@ pub const STARTING_MAP: &str = "tavern_outside";
 pub const TILE_SIZE_PX: u32 = 8;
 pub const TILE_SIZE: f32 = TILE_SIZE_PX as f32;
 
-const SPAWN_TILE: u32 = 1;
+
+
+#[derive(Deserialize)]
+struct MapConfig {
+    spawn_x: f32,
+    spawn_y: f32,
+}
 
 static MAPS_DIR: Dir = include_dir!("src/maps");
+static TRANSITIONS_DIR: Dir = include_dir!("src/transitions");
 
-#[table(name = map_template, public)]
+#[table(accessor = map_template, public)]
 pub struct MapTemplate {
     #[primary_key]
     pub name: String,        // Ex: "tavern_road"
@@ -24,7 +32,7 @@ pub struct MapTemplate {
     pub spawn_y: f32,
 }
 
-#[table(name = world_mutation, public)]
+#[table(accessor = world_mutation, public)]
 pub struct WorldMutation {
     #[primary_key]
     pub id: u64,
@@ -34,7 +42,7 @@ pub struct WorldMutation {
     pub new_tile_id: u32,
 }
 
-#[table(name = map_instance, public)]
+#[table(accessor = map_instance, public)]
 #[derive(Clone)]
 pub struct MapInstance {
     #[primary_key]
@@ -46,8 +54,8 @@ pub struct MapInstance {
     pub template_name: String,
 }
 
-#[table(name = map_transition, public)]
-#[derive(Clone)]
+#[table(accessor = map_transition, public)]
+#[derive(Clone, Deserialize)]
 pub struct MapTransition {
     #[primary_key]
     pub id: u32,
@@ -82,39 +90,30 @@ pub fn init(ctx: &ReducerContext) {
         let height = lines.len() as u32;
         let width = lines[0].split(',').map(|s| s.trim()).filter(|s| !s.is_empty()).count() as u32;
 
-        let mut tile_data = Vec::new();
-        let mut spawn_x = 0.0;
-        let mut spawn_y = 0.0;
-        let mut found_spawn = false;
+        if let Some(config_file) = MAPS_DIR.get_file(format!("{}.json", template_name)) {
+             let config_content = config_file.contents_utf8().expect("Erro Crítico: UTF-8 inválido no JSON do mapa");
+             match serde_json::from_str::<MapConfig>(config_content) {
+                 Ok(config) => {
+                     let tile_data: Vec<u32> = lines.iter()
+                        .flat_map(|line| line.split(',').map(|s| s.trim()).filter(|s| !s.is_empty()))
+                        .filter_map(|s| u32::from_str(s).ok())
+                        .collect();
 
-        for (y, line) in lines.iter().enumerate() {
-            let cols: Vec<&str> = line.split(',').map(|s| s.trim()).filter(|s| !s.is_empty()).collect();
-
-            for (x, val_str) in cols.iter().enumerate() {
-                if let Ok(tile_id) = u32::from_str(val_str) {
-                    // --- DETECTOR DE SPAWN (Tile 1) ---
-                    if tile_id == SPAWN_TILE {
-                        spawn_x = (x as f32 * TILE_SIZE) + (TILE_SIZE / 2.0);
-                        spawn_y = (y as f32 * TILE_SIZE) + (TILE_SIZE / 2.0);
-                        found_spawn = true;
-                    }
-                    tile_data.push(tile_id);
-                }
-            }
+                     ctx.db.map_template().insert(MapTemplate {
+                         name: template_name.clone(),
+                         width, height, tile_data, 
+                         spawn_x: config.spawn_x, 
+                         spawn_y: config.spawn_y,
+                     });
+                     log::info!("✅ Mapa carregado: '{}' | Spawn: ({}, {})", template_name, config.spawn_x, config.spawn_y);
+                 },
+                 Err(e) => {
+                      log::error!("❌ ERRO ao parsear config '{}': {}", template_name, e);
+                 }
+             }
+        } else {
+             log::error!("⛔ CONFIG REJEITADA: '{}' não possui arquivo .json de configuração.", template_name);
         }
-
-        // --- VALIDAÇÃO: Ignora o template se não tiver Spawn ---
-        if !found_spawn {
-            log::error!("⛔ MAPA REJEITADO: '{}' não possui Spawn Point (Tile 1). Adicione o tile 1 no CSV.", template_name);
-            continue;
-        }
-
-        ctx.db.map_template().insert(MapTemplate {
-            name: template_name.clone(),
-            width, height, tile_data, spawn_x, spawn_y,
-        });
-
-        log::info!("✅ Mapa carregado: '{}' | Spawn: ({}, {})", template_name, spawn_x, spawn_y);
     }
 
     init_map_transitions(ctx);
@@ -122,35 +121,29 @@ pub fn init(ctx: &ReducerContext) {
 
 #[reducer]
 pub fn init_map_transitions(ctx: &ReducerContext) {
-    let transitions = vec![
-        MapTransition {
-            id: 1,
-            map_id: "tavern_outside".to_string(),
-            x: 136.0,   // <--- ALINHADO (17 * 8)
-            y: 168.0,   // <--- ALINHADO (22 * 8)
-            width: 8.0,  // (2 tiles)
-            height: 8.0,  // (1 tile)
-            dest_map_id: "tavern_inside".to_string(),
-            dest_x: 176.0, // Sempre bom nascer alinhado também (4 * 8)
-            dest_y: 88.0,
-        },
-        MapTransition {
-            id: 2,
-            map_id: "tavern_inside".to_string(),
-            x: 176.0,   // <--- ALINHADO (17 * 8)
-            y: 96.0,   // <--- ALINHADO (22 * 8)
-            width: 8.0,  // (2 tiles)
-            height: 8.0,  // (1 tile)
-            dest_map_id: "tavern_outside".to_string(),
-            dest_x: 116.0, // Sempre bom nascer alinhado também (4 * 8)
-            dest_y: 188.0,
-        }
-    ];
+    let mut total_transitions = 0;
 
-    for t in transitions {
-        ctx.db.map_transition().insert(t);
+    for file in TRANSITIONS_DIR.files() {
+        let filename = file.path().file_name().unwrap().to_str().unwrap();
+        if !filename.ends_with(".json") { continue; }
+
+        let content = file.contents_utf8().expect("Erro Crítico: UTF-8 inválido no JSON de transições");
+        
+        match serde_json::from_str::<Vec<MapTransition>>(content) {
+            Ok(transitions) => {
+                for t in transitions {
+                     ctx.db.map_transition().insert(t);
+                     total_transitions += 1;
+                }
+                log::info!("✅ Transições carregadas de '{}'.", filename);
+            },
+            Err(e) => {
+                log::error!("❌ ERRO ao parsear '{}': {}", filename, e);
+            }
+        }
     }
-    log::info!("✅ Regras de transição carregadas.");
+
+    log::info!("✅ Total de {} regras de transição carregadas.", total_transitions);
 }
 
 #[reducer]
@@ -210,7 +203,7 @@ pub fn get_map_bounds_from_db(ctx: &ReducerContext, map_id: &str) -> (f32, f32, 
 
 #[reducer]
 pub fn spawn_player_at_map(ctx: &ReducerContext, player_id: u32, map_id: String) -> Result<(), String> {
-    let identity = ctx.sender;
+    let identity = ctx.sender();
     let player = ctx.db.player().id().find(&player_id).ok_or("Player not found")?;
 
     if player.identity != identity { return Err("Unauthorized".to_string()); }

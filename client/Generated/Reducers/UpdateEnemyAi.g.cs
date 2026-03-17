@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void UpdateEnemyAi(uint enemyId, string newState, float positionX, float positionY, float velocityX, float velocityY, uint? targetPlayerId, float lastKnownPlayerX, float lastKnownPlayerY)
         {
-            conn.InternalCallReducer(new Reducer.UpdateEnemyAi(enemyId, newState, positionX, positionY, velocityX, velocityY, targetPlayerId, lastKnownPlayerX, lastKnownPlayerY), this.SetCallReducerFlags.UpdateEnemyAiFlags);
+            conn.InternalCallReducer(new Reducer.UpdateEnemyAi(enemyId, newState, positionX, positionY, velocityX, velocityY, targetPlayerId, lastKnownPlayerX, lastKnownPlayerY));
         }
 
         public bool InvokeUpdateEnemyAi(ReducerEventContext ctx, Reducer.UpdateEnemyAi args)
@@ -105,11 +105,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "update_enemy_ai";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags UpdateEnemyAiFlags;
-        public void UpdateEnemyAi(CallReducerFlags flags) => UpdateEnemyAiFlags = flags;
     }
 }

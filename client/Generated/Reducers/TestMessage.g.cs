@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void TestMessage(string message)
         {
-            conn.InternalCallReducer(new Reducer.TestMessage(message), this.SetCallReducerFlags.TestMessageFlags);
+            conn.InternalCallReducer(new Reducer.TestMessage(message));
         }
 
         public bool InvokeTestMessage(ReducerEventContext ctx, Reducer.TestMessage args)
@@ -63,11 +63,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "test_message";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags TestMessageFlags;
-        public void TestMessage(CallReducerFlags flags) => TestMessageFlags = flags;
     }
 }

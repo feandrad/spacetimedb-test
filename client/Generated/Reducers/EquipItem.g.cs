@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void EquipItem(uint playerId, string itemId)
         {
-            conn.InternalCallReducer(new Reducer.EquipItem(playerId, itemId), this.SetCallReducerFlags.EquipItemFlags);
+            conn.InternalCallReducer(new Reducer.EquipItem(playerId, itemId));
         }
 
         public bool InvokeEquipItem(ReducerEventContext ctx, Reducer.EquipItem args)
@@ -70,11 +70,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "equip_item";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags EquipItemFlags;
-        public void EquipItem(CallReducerFlags flags) => EquipItemFlags = flags;
     }
 }

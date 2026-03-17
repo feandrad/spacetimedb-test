@@ -36,4 +36,26 @@ namespace SpacetimeDB.Types
 
         public readonly ResourceIdMappingHandle ResourceIdMapping;
     }
+
+    public sealed class ResourceIdMappingCols
+    {
+        public global::SpacetimeDB.Col<ResourceIdMapping, string> KeyId { get; }
+        public global::SpacetimeDB.Col<ResourceIdMapping, uint> ResourceId { get; }
+
+        public ResourceIdMappingCols(string tableName)
+        {
+            KeyId = new global::SpacetimeDB.Col<ResourceIdMapping, string>(tableName, "key_id");
+            ResourceId = new global::SpacetimeDB.Col<ResourceIdMapping, uint>(tableName, "resource_id");
+        }
+    }
+
+    public sealed class ResourceIdMappingIxCols
+    {
+        public global::SpacetimeDB.IxCol<ResourceIdMapping, string> KeyId { get; }
+
+        public ResourceIdMappingIxCols(string tableName)
+        {
+            KeyId = new global::SpacetimeDB.IxCol<ResourceIdMapping, string>(tableName, "key_id");
+        }
+    }
 }

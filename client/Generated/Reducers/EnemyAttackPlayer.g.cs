@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void EnemyAttackPlayer(uint enemyId, uint playerId, float damage)
         {
-            conn.InternalCallReducer(new Reducer.EnemyAttackPlayer(enemyId, playerId, damage), this.SetCallReducerFlags.EnemyAttackPlayerFlags);
+            conn.InternalCallReducer(new Reducer.EnemyAttackPlayer(enemyId, playerId, damage));
         }
 
         public bool InvokeEnemyAttackPlayer(ReducerEventContext ctx, Reducer.EnemyAttackPlayer args)
@@ -74,11 +74,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "enemy_attack_player";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags EnemyAttackPlayerFlags;
-        public void EnemyAttackPlayer(CallReducerFlags flags) => EnemyAttackPlayerFlags = flags;
     }
 }

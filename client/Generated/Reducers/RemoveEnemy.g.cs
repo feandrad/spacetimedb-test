@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void RemoveEnemy(uint enemyId)
         {
-            conn.InternalCallReducer(new Reducer.RemoveEnemy(enemyId), this.SetCallReducerFlags.RemoveEnemyFlags);
+            conn.InternalCallReducer(new Reducer.RemoveEnemy(enemyId));
         }
 
         public bool InvokeRemoveEnemy(ReducerEventContext ctx, Reducer.RemoveEnemy args)
@@ -62,11 +62,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "remove_enemy";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags RemoveEnemyFlags;
-        public void RemoveEnemy(CallReducerFlags flags) => RemoveEnemyFlags = flags;
     }
 }

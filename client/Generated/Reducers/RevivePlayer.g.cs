@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void RevivePlayer(uint playerId, uint reviverId)
         {
-            conn.InternalCallReducer(new Reducer.RevivePlayer(playerId, reviverId), this.SetCallReducerFlags.RevivePlayerFlags);
+            conn.InternalCallReducer(new Reducer.RevivePlayer(playerId, reviverId));
         }
 
         public bool InvokeRevivePlayer(ReducerEventContext ctx, Reducer.RevivePlayer args)
@@ -69,11 +69,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "revive_player";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags RevivePlayerFlags;
-        public void RevivePlayer(CallReducerFlags flags) => RevivePlayerFlags = flags;
     }
 }

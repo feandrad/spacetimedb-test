@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo build:*)",
+      "Bash(spacetime version:*)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet list:*)",
+      "Bash(grep -i -E '^IsActive$|^IsConnected$|^Active$|^Connected$|ConnectionState')",
+      "Bash(curl -s http://localhost:7734/identity)",
+      "Bash(curl -sv http://localhost:7734/)",
+      "Bash(/Users/feandrad/.local/share/spacetime/bin/current/spacetimedb-standalone --version)",
+      "Bash(/Users/feandrad/.local/share/spacetime/bin/current/spacetimedb-standalone version:*)",
+      "Bash(for f:*)",
+      "Bash(do sed:*)",
+      "Bash(done)",
+      "Bash(echo \"Done replacing ctx.db\\(\\) -> ctx.db\")",
+      "Bash(cd:*)",
+      "Bash(grep -rn 'ctx\\\\.sender\\(\\)' src/*.rs)",
+      "Bash(/Users/feandrad/.local/bin/spacetime build:*)",
+      "Bash(/Users/feandrad/.local/bin/spacetime publish:*)",
+      "Bash(/Users/feandrad/.local/bin/spacetime generate:*)"
+    ]
+  }
+}

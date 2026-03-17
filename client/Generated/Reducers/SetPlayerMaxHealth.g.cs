@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void SetPlayerMaxHealth(uint playerId, float maxHealth)
         {
-            conn.InternalCallReducer(new Reducer.SetPlayerMaxHealth(playerId, maxHealth), this.SetCallReducerFlags.SetPlayerMaxHealthFlags);
+            conn.InternalCallReducer(new Reducer.SetPlayerMaxHealth(playerId, maxHealth));
         }
 
         public bool InvokeSetPlayerMaxHealth(ReducerEventContext ctx, Reducer.SetPlayerMaxHealth args)
@@ -69,11 +69,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "set_player_max_health";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags SetPlayerMaxHealthFlags;
-        public void SetPlayerMaxHealth(CallReducerFlags flags) => SetPlayerMaxHealthFlags = flags;
     }
 }

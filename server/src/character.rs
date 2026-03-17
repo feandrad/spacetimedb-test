@@ -1,5 +1,5 @@
+use crate::player;
 use spacetimedb::{reducer, ReducerContext, Table};
-use crate::{player};
 
 #[reducer]
 pub fn apply_damage_to_player(
@@ -8,7 +8,7 @@ pub fn apply_damage_to_player(
     damage: f32,
     attacker_id: u32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let _identity = ctx.sender;
+    let _identity = ctx.sender();
     
     // Find the player
     if let Some(player) = ctx.db.player().id().find(&player_id) {
@@ -49,7 +49,7 @@ pub fn heal_player(
     player_id: u32,
     heal_amount: f32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let identity = ctx.sender;
+    let identity = ctx.sender();
     
     // Find the player
     if let Some(player) = ctx.db.player().id().find(&player_id) {
@@ -93,7 +93,7 @@ pub fn revive_player(
     player_id: u32,
     reviver_id: u32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let _identity = ctx.sender;
+    let _identity = ctx.sender();
     
     // Find the player to revive
     if let Some(player) = ctx.db.player().id().find(&player_id) {
@@ -129,7 +129,7 @@ pub fn set_player_max_health(
     player_id: u32,
     max_health: f32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let identity = ctx.sender;
+    let identity = ctx.sender();
     
     // Find the player
     if let Some(player) = ctx.db.player().id().find(&player_id) {
@@ -166,7 +166,7 @@ pub fn use_health_consumable(
     player_id: u32,
     item_id: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let identity = ctx.sender;
+    let identity = ctx.sender();
     
     // Find the player
     if let Some(player) = ctx.db.player().id().find(&player_id) {

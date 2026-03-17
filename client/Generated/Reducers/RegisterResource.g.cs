@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void RegisterResource(string keyId, string resourceType, string data)
         {
-            conn.InternalCallReducer(new Reducer.RegisterResource(keyId, resourceType, data), this.SetCallReducerFlags.RegisterResourceFlags);
+            conn.InternalCallReducer(new Reducer.RegisterResource(keyId, resourceType, data));
         }
 
         public bool InvokeRegisterResource(ReducerEventContext ctx, Reducer.RegisterResource args)
@@ -77,11 +77,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "register_resource";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags RegisterResourceFlags;
-        public void RegisterResource(CallReducerFlags flags) => RegisterResourceFlags = flags;
     }
 }

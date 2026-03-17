@@ -36,4 +36,44 @@ namespace SpacetimeDB.Types
 
         public readonly ProjectileHandle Projectile;
     }
+
+    public sealed class ProjectileCols
+    {
+        public global::SpacetimeDB.Col<Projectile, uint> Id { get; }
+        public global::SpacetimeDB.Col<Projectile, uint> OwnerId { get; }
+        public global::SpacetimeDB.Col<Projectile, float> PositionX { get; }
+        public global::SpacetimeDB.Col<Projectile, float> PositionY { get; }
+        public global::SpacetimeDB.Col<Projectile, float> VelocityX { get; }
+        public global::SpacetimeDB.Col<Projectile, float> VelocityY { get; }
+        public global::SpacetimeDB.Col<Projectile, float> Damage { get; }
+        public global::SpacetimeDB.Col<Projectile, float> TimeToLive { get; }
+        public global::SpacetimeDB.Col<Projectile, string> ProjectileType { get; }
+        public global::SpacetimeDB.Col<Projectile, string> MapId { get; }
+        public global::SpacetimeDB.Col<Projectile, bool> IsActive { get; }
+
+        public ProjectileCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.Col<Projectile, uint>(tableName, "id");
+            OwnerId = new global::SpacetimeDB.Col<Projectile, uint>(tableName, "owner_id");
+            PositionX = new global::SpacetimeDB.Col<Projectile, float>(tableName, "position_x");
+            PositionY = new global::SpacetimeDB.Col<Projectile, float>(tableName, "position_y");
+            VelocityX = new global::SpacetimeDB.Col<Projectile, float>(tableName, "velocity_x");
+            VelocityY = new global::SpacetimeDB.Col<Projectile, float>(tableName, "velocity_y");
+            Damage = new global::SpacetimeDB.Col<Projectile, float>(tableName, "damage");
+            TimeToLive = new global::SpacetimeDB.Col<Projectile, float>(tableName, "time_to_live");
+            ProjectileType = new global::SpacetimeDB.Col<Projectile, string>(tableName, "projectile_type");
+            MapId = new global::SpacetimeDB.Col<Projectile, string>(tableName, "map_id");
+            IsActive = new global::SpacetimeDB.Col<Projectile, bool>(tableName, "is_active");
+        }
+    }
+
+    public sealed class ProjectileIxCols
+    {
+        public global::SpacetimeDB.IxCol<Projectile, uint> Id { get; }
+
+        public ProjectileIxCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.IxCol<Projectile, uint>(tableName, "id");
+        }
+    }
 }

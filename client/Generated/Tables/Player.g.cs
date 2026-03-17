@@ -56,4 +56,54 @@ namespace SpacetimeDB.Types
 
         public readonly PlayerHandle Player;
     }
+
+    public sealed class PlayerCols
+    {
+        public global::SpacetimeDB.Col<Player, uint> Id { get; }
+        public global::SpacetimeDB.Col<Player, string> UsernameCanonical { get; }
+        public global::SpacetimeDB.Col<Player, string> UsernameDisplay { get; }
+        public global::SpacetimeDB.Col<Player, SpacetimeDB.Identity> Identity { get; }
+        public global::SpacetimeDB.Col<Player, float> PositionX { get; }
+        public global::SpacetimeDB.Col<Player, float> PositionY { get; }
+        public global::SpacetimeDB.Col<Player, float> VelocityX { get; }
+        public global::SpacetimeDB.Col<Player, float> VelocityY { get; }
+        public global::SpacetimeDB.Col<Player, string> CurrentMapId { get; }
+        public global::SpacetimeDB.Col<Player, float> Health { get; }
+        public global::SpacetimeDB.Col<Player, float> MaxHealth { get; }
+        public global::SpacetimeDB.Col<Player, bool> IsDowned { get; }
+        public global::SpacetimeDB.Col<Player, uint> LastInputSequence { get; }
+        public global::SpacetimeDB.Col<Player, SpacetimeDB.Timestamp> LastTransitionTime { get; }
+
+        public PlayerCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.Col<Player, uint>(tableName, "id");
+            UsernameCanonical = new global::SpacetimeDB.Col<Player, string>(tableName, "username_canonical");
+            UsernameDisplay = new global::SpacetimeDB.Col<Player, string>(tableName, "username_display");
+            Identity = new global::SpacetimeDB.Col<Player, SpacetimeDB.Identity>(tableName, "identity");
+            PositionX = new global::SpacetimeDB.Col<Player, float>(tableName, "position_x");
+            PositionY = new global::SpacetimeDB.Col<Player, float>(tableName, "position_y");
+            VelocityX = new global::SpacetimeDB.Col<Player, float>(tableName, "velocity_x");
+            VelocityY = new global::SpacetimeDB.Col<Player, float>(tableName, "velocity_y");
+            CurrentMapId = new global::SpacetimeDB.Col<Player, string>(tableName, "current_map_id");
+            Health = new global::SpacetimeDB.Col<Player, float>(tableName, "health");
+            MaxHealth = new global::SpacetimeDB.Col<Player, float>(tableName, "max_health");
+            IsDowned = new global::SpacetimeDB.Col<Player, bool>(tableName, "is_downed");
+            LastInputSequence = new global::SpacetimeDB.Col<Player, uint>(tableName, "last_input_sequence");
+            LastTransitionTime = new global::SpacetimeDB.Col<Player, SpacetimeDB.Timestamp>(tableName, "last_transition_time");
+        }
+    }
+
+    public sealed class PlayerIxCols
+    {
+        public global::SpacetimeDB.IxCol<Player, uint> Id { get; }
+        public global::SpacetimeDB.IxCol<Player, string> UsernameCanonical { get; }
+        public global::SpacetimeDB.IxCol<Player, SpacetimeDB.Identity> Identity { get; }
+
+        public PlayerIxCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.IxCol<Player, uint>(tableName, "id");
+            UsernameCanonical = new global::SpacetimeDB.IxCol<Player, string>(tableName, "username_canonical");
+            Identity = new global::SpacetimeDB.IxCol<Player, SpacetimeDB.Identity>(tableName, "identity");
+        }
+    }
 }

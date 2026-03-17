@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void SpawnPlayerAtMap(uint playerId, string mapId)
         {
-            conn.InternalCallReducer(new Reducer.SpawnPlayerAtMap(playerId, mapId), this.SetCallReducerFlags.SpawnPlayerAtMapFlags);
+            conn.InternalCallReducer(new Reducer.SpawnPlayerAtMap(playerId, mapId));
         }
 
         public bool InvokeSpawnPlayerAtMap(ReducerEventContext ctx, Reducer.SpawnPlayerAtMap args)
@@ -70,11 +70,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "spawn_player_at_map";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags SpawnPlayerAtMapFlags;
-        public void SpawnPlayerAtMap(CallReducerFlags flags) => SpawnPlayerAtMapFlags = flags;
     }
 }

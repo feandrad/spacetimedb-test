@@ -36,4 +36,32 @@ namespace SpacetimeDB.Types
 
         public readonly PlayerEquipmentHandle PlayerEquipment;
     }
+
+    public sealed class PlayerEquipmentCols
+    {
+        public global::SpacetimeDB.Col<PlayerEquipment, uint> PlayerId { get; }
+        public global::SpacetimeDB.Col<PlayerEquipment, string> MainHandWeapon { get; }
+        public global::SpacetimeDB.Col<PlayerEquipment, string> OffHandTool { get; }
+        public global::SpacetimeDB.Col<PlayerEquipment, string> Armor { get; }
+        public global::SpacetimeDB.Col<PlayerEquipment, string> Accessory { get; }
+
+        public PlayerEquipmentCols(string tableName)
+        {
+            PlayerId = new global::SpacetimeDB.Col<PlayerEquipment, uint>(tableName, "player_id");
+            MainHandWeapon = new global::SpacetimeDB.Col<PlayerEquipment, string>(tableName, "main_hand_weapon");
+            OffHandTool = new global::SpacetimeDB.Col<PlayerEquipment, string>(tableName, "off_hand_tool");
+            Armor = new global::SpacetimeDB.Col<PlayerEquipment, string>(tableName, "armor");
+            Accessory = new global::SpacetimeDB.Col<PlayerEquipment, string>(tableName, "accessory");
+        }
+    }
+
+    public sealed class PlayerEquipmentIxCols
+    {
+        public global::SpacetimeDB.IxCol<PlayerEquipment, uint> PlayerId { get; }
+
+        public PlayerEquipmentIxCols(string tableName)
+        {
+            PlayerId = new global::SpacetimeDB.IxCol<PlayerEquipment, uint>(tableName, "player_id");
+        }
+    }
 }

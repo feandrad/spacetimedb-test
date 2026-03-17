@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void GiveArrowsToPlayer(uint playerId, int quantity)
         {
-            conn.InternalCallReducer(new Reducer.GiveArrowsToPlayer(playerId, quantity), this.SetCallReducerFlags.GiveArrowsToPlayerFlags);
+            conn.InternalCallReducer(new Reducer.GiveArrowsToPlayer(playerId, quantity));
         }
 
         public bool InvokeGiveArrowsToPlayer(ReducerEventContext ctx, Reducer.GiveArrowsToPlayer args)
@@ -69,11 +69,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "give_arrows_to_player";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags GiveArrowsToPlayerFlags;
-        public void GiveArrowsToPlayer(CallReducerFlags flags) => GiveArrowsToPlayerFlags = flags;
     }
 }

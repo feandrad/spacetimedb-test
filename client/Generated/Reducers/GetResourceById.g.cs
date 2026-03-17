@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void GetResourceById(uint resourceId)
         {
-            conn.InternalCallReducer(new Reducer.GetResourceById(resourceId), this.SetCallReducerFlags.GetResourceByIdFlags);
+            conn.InternalCallReducer(new Reducer.GetResourceById(resourceId));
         }
 
         public bool InvokeGetResourceById(ReducerEventContext ctx, Reducer.GetResourceById args)
@@ -62,11 +62,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "get_resource_by_id";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags GetResourceByIdFlags;
-        public void GetResourceById(CallReducerFlags flags) => GetResourceByIdFlags = flags;
     }
 }

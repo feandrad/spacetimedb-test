@@ -46,4 +46,34 @@ namespace SpacetimeDB.Types
 
         public readonly MapInstanceHandle MapInstance;
     }
+
+    public sealed class MapInstanceCols
+    {
+        public global::SpacetimeDB.Col<MapInstance, uint> Id { get; }
+        public global::SpacetimeDB.Col<MapInstance, string> KeyId { get; }
+        public global::SpacetimeDB.Col<MapInstance, string> State { get; }
+        public global::SpacetimeDB.Col<MapInstance, uint> PlayerCount { get; }
+        public global::SpacetimeDB.Col<MapInstance, string> TemplateName { get; }
+
+        public MapInstanceCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.Col<MapInstance, uint>(tableName, "id");
+            KeyId = new global::SpacetimeDB.Col<MapInstance, string>(tableName, "key_id");
+            State = new global::SpacetimeDB.Col<MapInstance, string>(tableName, "state");
+            PlayerCount = new global::SpacetimeDB.Col<MapInstance, uint>(tableName, "player_count");
+            TemplateName = new global::SpacetimeDB.Col<MapInstance, string>(tableName, "template_name");
+        }
+    }
+
+    public sealed class MapInstanceIxCols
+    {
+        public global::SpacetimeDB.IxCol<MapInstance, uint> Id { get; }
+        public global::SpacetimeDB.IxCol<MapInstance, string> KeyId { get; }
+
+        public MapInstanceIxCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.IxCol<MapInstance, uint>(tableName, "id");
+            KeyId = new global::SpacetimeDB.IxCol<MapInstance, string>(tableName, "key_id");
+        }
+    }
 }

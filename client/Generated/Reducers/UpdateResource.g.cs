@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void UpdateResource(string keyId, string newData)
         {
-            conn.InternalCallReducer(new Reducer.UpdateResource(keyId, newData), this.SetCallReducerFlags.UpdateResourceFlags);
+            conn.InternalCallReducer(new Reducer.UpdateResource(keyId, newData));
         }
 
         public bool InvokeUpdateResource(ReducerEventContext ctx, Reducer.UpdateResource args)
@@ -71,11 +71,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "update_resource";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags UpdateResourceFlags;
-        public void UpdateResource(CallReducerFlags flags) => UpdateResourceFlags = flags;
     }
 }

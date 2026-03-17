@@ -36,4 +36,32 @@ namespace SpacetimeDB.Types
 
         public readonly ResourceRegistryHandle ResourceRegistry;
     }
+
+    public sealed class ResourceRegistryCols
+    {
+        public global::SpacetimeDB.Col<ResourceRegistry, uint> Id { get; }
+        public global::SpacetimeDB.Col<ResourceRegistry, string> KeyId { get; }
+        public global::SpacetimeDB.Col<ResourceRegistry, string> ResourceType { get; }
+        public global::SpacetimeDB.Col<ResourceRegistry, string> Data { get; }
+        public global::SpacetimeDB.Col<ResourceRegistry, uint> HashDisambiguation { get; }
+
+        public ResourceRegistryCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.Col<ResourceRegistry, uint>(tableName, "id");
+            KeyId = new global::SpacetimeDB.Col<ResourceRegistry, string>(tableName, "key_id");
+            ResourceType = new global::SpacetimeDB.Col<ResourceRegistry, string>(tableName, "resource_type");
+            Data = new global::SpacetimeDB.Col<ResourceRegistry, string>(tableName, "data");
+            HashDisambiguation = new global::SpacetimeDB.Col<ResourceRegistry, uint>(tableName, "hash_disambiguation");
+        }
+    }
+
+    public sealed class ResourceRegistryIxCols
+    {
+        public global::SpacetimeDB.IxCol<ResourceRegistry, uint> Id { get; }
+
+        public ResourceRegistryIxCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.IxCol<ResourceRegistry, uint>(tableName, "id");
+        }
+    }
 }

@@ -36,4 +36,34 @@ namespace SpacetimeDB.Types
 
         public readonly CombatEventHandle CombatEvent;
     }
+
+    public sealed class CombatEventCols
+    {
+        public global::SpacetimeDB.Col<CombatEvent, uint> Id { get; }
+        public global::SpacetimeDB.Col<CombatEvent, uint> AttackerId { get; }
+        public global::SpacetimeDB.Col<CombatEvent, uint> TargetId { get; }
+        public global::SpacetimeDB.Col<CombatEvent, string> WeaponType { get; }
+        public global::SpacetimeDB.Col<CombatEvent, float> Damage { get; }
+        public global::SpacetimeDB.Col<CombatEvent, ulong> Timestamp { get; }
+
+        public CombatEventCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.Col<CombatEvent, uint>(tableName, "id");
+            AttackerId = new global::SpacetimeDB.Col<CombatEvent, uint>(tableName, "attacker_id");
+            TargetId = new global::SpacetimeDB.Col<CombatEvent, uint>(tableName, "target_id");
+            WeaponType = new global::SpacetimeDB.Col<CombatEvent, string>(tableName, "weapon_type");
+            Damage = new global::SpacetimeDB.Col<CombatEvent, float>(tableName, "damage");
+            Timestamp = new global::SpacetimeDB.Col<CombatEvent, ulong>(tableName, "timestamp");
+        }
+    }
+
+    public sealed class CombatEventIxCols
+    {
+        public global::SpacetimeDB.IxCol<CombatEvent, uint> Id { get; }
+
+        public CombatEventIxCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.IxCol<CombatEvent, uint>(tableName, "id");
+        }
+    }
 }

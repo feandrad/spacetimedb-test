@@ -1,7 +1,7 @@
-use spacetimedb::{table, reducer, ReducerContext, Table};
-use crate::{player};
+use crate::player;
+use spacetimedb::{reducer, table, ReducerContext, Table};
 
-#[table(name = inventory_item, public)]
+#[table(accessor = inventory_item, public)]
 #[derive(Clone)]
 pub struct InventoryItem {
     #[primary_key]
@@ -13,7 +13,7 @@ pub struct InventoryItem {
     pub slot_type: String, // "weapon", "tool", "consumable", etc.
 }
 
-#[table(name = player_equipment, public)]
+#[table(accessor = player_equipment, public)]
 #[derive(Clone)]
 pub struct PlayerEquipment {
     #[primary_key]
@@ -26,7 +26,7 @@ pub struct PlayerEquipment {
 
 // Interactable objects in the world
 // Requirements 6.1, 6.2, 6.3: Object types with contextual actions
-#[table(name = interactable_object, public)]
+#[table(accessor = interactable_object, public)]
 #[derive(Clone)]
 pub struct InteractableObject {
     #[primary_key]
@@ -58,7 +58,7 @@ pub fn add_item_to_inventory(
     item_id: String,
     quantity: i32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let _identity = ctx.sender;
+    let _identity = ctx.sender();
     
     // TODO: Validate player ownership and inventory space
     // Requirements 5.5: Prevent picking up when inventory is full
@@ -98,7 +98,7 @@ pub fn equip_item(
     player_id: u32,
     item_id: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let _identity = ctx.sender;
+    let _identity = ctx.sender();
     
     // Requirements 5.3: Update active weapon and enable combat behavior
     
@@ -179,7 +179,7 @@ pub fn unequip_item(
     player_id: u32,
     item_id: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let _identity = ctx.sender;
+    let _identity = ctx.sender();
     
     unequip_item_internal(ctx, player_id, &item_id)
 }
@@ -231,7 +231,7 @@ pub fn pickup_item(
     _position_x: f32,
     _position_y: f32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let _identity = ctx.sender;
+    let _identity = ctx.sender();
     
     // Requirements 5.2: Add items to available inventory space
     // Requirements 5.5: Prevent picking up when inventory is full
@@ -248,7 +248,7 @@ pub fn execute_contextual_action(
     object_id: u32,
     action_type: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let _identity = ctx.sender;
+    let _identity = ctx.sender();
     
     // Requirements 6.4: Execute appropriate interactions
     // Requirements 6.5: Server validates all contextual actions
@@ -534,6 +534,10 @@ fn generate_object_id() -> u32 {
 }
 
 // Helper functions
+
+pub fn get_item_slot_type_pub(item_id: &str) -> String {
+    get_item_slot_type(item_id)
+}
 
 fn get_item_slot_type(item_id: &str) -> String {
     match item_id {

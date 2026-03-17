@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void RemoveResource(string keyId)
         {
-            conn.InternalCallReducer(new Reducer.RemoveResource(keyId), this.SetCallReducerFlags.RemoveResourceFlags);
+            conn.InternalCallReducer(new Reducer.RemoveResource(keyId));
         }
 
         public bool InvokeRemoveResource(ReducerEventContext ctx, Reducer.RemoveResource args)
@@ -63,11 +63,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "remove_resource";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags RemoveResourceFlags;
-        public void RemoveResource(CallReducerFlags flags) => RemoveResourceFlags = flags;
     }
 }

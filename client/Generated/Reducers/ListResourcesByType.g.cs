@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void ListResourcesByType(string resourceType)
         {
-            conn.InternalCallReducer(new Reducer.ListResourcesByType(resourceType), this.SetCallReducerFlags.ListResourcesByTypeFlags);
+            conn.InternalCallReducer(new Reducer.ListResourcesByType(resourceType));
         }
 
         public bool InvokeListResourcesByType(ReducerEventContext ctx, Reducer.ListResourcesByType args)
@@ -63,11 +63,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "list_resources_by_type";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags ListResourcesByTypeFlags;
-        public void ListResourcesByType(CallReducerFlags flags) => ListResourcesByTypeFlags = flags;
     }
 }

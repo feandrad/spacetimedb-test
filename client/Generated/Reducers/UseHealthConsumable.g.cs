@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void UseHealthConsumable(uint playerId, string itemId)
         {
-            conn.InternalCallReducer(new Reducer.UseHealthConsumable(playerId, itemId), this.SetCallReducerFlags.UseHealthConsumableFlags);
+            conn.InternalCallReducer(new Reducer.UseHealthConsumable(playerId, itemId));
         }
 
         public bool InvokeUseHealthConsumable(ReducerEventContext ctx, Reducer.UseHealthConsumable args)
@@ -70,11 +70,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "use_health_consumable";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags UseHealthConsumableFlags;
-        public void UseHealthConsumable(CallReducerFlags flags) => UseHealthConsumableFlags = flags;
     }
 }

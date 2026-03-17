@@ -10,8 +10,9 @@ pub mod combat;
 pub mod character;
 pub mod inventory;
 pub mod resource_registry;
+pub mod container;
 
-#[table(name = player, public)]
+#[table(accessor = player, public)]
 #[derive(Clone)]
 pub struct Player {
     #[primary_key]
@@ -42,10 +43,10 @@ pub struct Player {
 /// Called when a client connects to the database
 #[reducer(client_connected)]
 pub fn on_connect(ctx: &ReducerContext) {
-    log::info!("🔌 Client connected: {:?}", ctx.sender);
+    log::info!("🔌 Client connected: {:?}", ctx.sender());
 
     // 1. IDENTIFICAÇÃO E GARANTIA DE INFRA (A parte que faltava)
-    let map_to_init = if let Some(player) = ctx.db.player().iter().find(|p| p.identity == ctx.sender) {
+    let map_to_init = if let Some(player) = ctx.db.player().iter().find(|p| p.identity == ctx.sender()) {
         log::info!("👤 Existing player reconnected: {}, Map: {}",
                    player.username_display, player.current_map_id);
         player.current_map_id.clone()
@@ -67,10 +68,10 @@ pub fn on_connect(ctx: &ReducerContext) {
 /// Called when a client disconnects from the database
 #[reducer(client_disconnected)]
 pub fn on_disconnect(ctx: &ReducerContext) {
-    log::info!("🔌 Client disconnected: {:?}", ctx.sender);
+    log::info!("🔌 Client disconnected: {:?}", ctx.sender());
 
     // Log player info if they had a player
-    if let Some(player) = ctx.db.player().iter().find(|p| p.identity == ctx.sender) {
+    if let Some(player) = ctx.db.player().iter().find(|p| p.identity == ctx.sender()) {
         log::info!("👋 Player {} ({}) disconnected from map: {}",
                    player.id, player.username_display, player.current_map_id);
 
@@ -84,7 +85,7 @@ pub fn on_disconnect(ctx: &ReducerContext) {
 // ============================================================================
 #[reducer]
 pub fn register_player(ctx: &ReducerContext, username_display: String) -> Result<(), String> {
-    let identity = ctx.sender;
+    let identity = ctx.sender();
 
     // Se já existe por identidade, só atualiza o mapa e retorna
     if let Some(p) = ctx.db.player().iter().find(|p| p.identity == identity) {
@@ -168,7 +169,7 @@ pub fn register_player(ctx: &ReducerContext, username_display: String) -> Result
 pub fn get_player_info(
     ctx: &ReducerContext,
 ) -> Result<(), String> {
-    let identity = ctx.sender;
+    let identity = ctx.sender();
 
     if let Some(player) = ctx.db.player().iter().find(|p| p.identity == identity) {
         log::info!("✅ Player authenticated - ID: {}, Username: {}, Map: {}, Position: ({:.1}, {:.1})",
@@ -183,7 +184,7 @@ pub fn get_player_info(
 
 #[reducer]
 pub fn get_map_data(ctx: &ReducerContext, map_id: String) -> Result<(), String> {
-    let identity = ctx.sender;
+    let identity = ctx.sender();
 
     if let Some(_player) = ctx.db.player().iter().find(|p| p.identity == identity) {
         if let Some(template) = ctx.db.map_template().name().find(map_id.clone()) {
@@ -213,7 +214,7 @@ fn generate_player_id(ctx: &ReducerContext) -> u32 {
     let mut hasher = DefaultHasher::new();
     player_count.hash(&mut hasher);
     // Add some randomness from the context
-    ctx.sender.to_hex().hash(&mut hasher);
+    ctx.sender().to_hex().hash(&mut hasher);
 
     let base_hash = (hasher.finish() % u32::MAX as u64) as u32;
 

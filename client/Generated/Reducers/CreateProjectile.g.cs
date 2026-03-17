@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void CreateProjectile(uint playerId, float originX, float originY, float directionX, float directionY)
         {
-            conn.InternalCallReducer(new Reducer.CreateProjectile(playerId, originX, originY, directionX, directionY), this.SetCallReducerFlags.CreateProjectileFlags);
+            conn.InternalCallReducer(new Reducer.CreateProjectile(playerId, originX, originY, directionX, directionY));
         }
 
         public bool InvokeCreateProjectile(ReducerEventContext ctx, Reducer.CreateProjectile args)
@@ -84,11 +84,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "create_projectile";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags CreateProjectileFlags;
-        public void CreateProjectile(CallReducerFlags flags) => CreateProjectileFlags = flags;
     }
 }

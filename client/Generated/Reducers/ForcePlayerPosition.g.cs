@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void ForcePlayerPosition(uint playerId, float x, float y)
         {
-            conn.InternalCallReducer(new Reducer.ForcePlayerPosition(playerId, x, y), this.SetCallReducerFlags.ForcePlayerPositionFlags);
+            conn.InternalCallReducer(new Reducer.ForcePlayerPosition(playerId, x, y));
         }
 
         public bool InvokeForcePlayerPosition(ReducerEventContext ctx, Reducer.ForcePlayerPosition args)
@@ -74,11 +74,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "force_player_position";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags ForcePlayerPositionFlags;
-        public void ForcePlayerPosition(CallReducerFlags flags) => ForcePlayerPositionFlags = flags;
     }
 }

@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void PickupItem(uint playerId, string itemId, int quantity, float positionX, float positionY)
         {
-            conn.InternalCallReducer(new Reducer.PickupItem(playerId, itemId, quantity, positionX, positionY), this.SetCallReducerFlags.PickupItemFlags);
+            conn.InternalCallReducer(new Reducer.PickupItem(playerId, itemId, quantity, positionX, positionY));
         }
 
         public bool InvokePickupItem(ReducerEventContext ctx, Reducer.PickupItem args)
@@ -58,9 +58,9 @@ namespace SpacetimeDB.Types
             public string ItemId;
             [DataMember(Name = "quantity")]
             public int Quantity;
-            [DataMember(Name = "_position_x")]
+            [DataMember(Name = "position_x")]
             public float PositionX;
-            [DataMember(Name = "_position_y")]
+            [DataMember(Name = "position_y")]
             public float PositionY;
 
             public PickupItem(
@@ -85,11 +85,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "pickup_item";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags PickupItemFlags;
-        public void PickupItem(CallReducerFlags flags) => PickupItemFlags = flags;
     }
 }

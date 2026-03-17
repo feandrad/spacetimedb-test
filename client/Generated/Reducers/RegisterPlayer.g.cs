@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void RegisterPlayer(string usernameDisplay)
         {
-            conn.InternalCallReducer(new Reducer.RegisterPlayer(usernameDisplay), this.SetCallReducerFlags.RegisterPlayerFlags);
+            conn.InternalCallReducer(new Reducer.RegisterPlayer(usernameDisplay));
         }
 
         public bool InvokeRegisterPlayer(ReducerEventContext ctx, Reducer.RegisterPlayer args)
@@ -63,11 +63,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "register_player";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags RegisterPlayerFlags;
-        public void RegisterPlayer(CallReducerFlags flags) => RegisterPlayerFlags = flags;
     }
 }

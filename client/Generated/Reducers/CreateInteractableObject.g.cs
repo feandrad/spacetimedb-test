@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void CreateInteractableObject(string objectType, float positionX, float positionY, string mapId)
         {
-            conn.InternalCallReducer(new Reducer.CreateInteractableObject(objectType, positionX, positionY, mapId), this.SetCallReducerFlags.CreateInteractableObjectFlags);
+            conn.InternalCallReducer(new Reducer.CreateInteractableObject(objectType, positionX, positionY, mapId));
         }
 
         public bool InvokeCreateInteractableObject(ReducerEventContext ctx, Reducer.CreateInteractableObject args)
@@ -81,11 +81,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "create_interactable_object";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags CreateInteractableObjectFlags;
-        public void CreateInteractableObject(CallReducerFlags flags) => CreateInteractableObjectFlags = flags;
     }
 }

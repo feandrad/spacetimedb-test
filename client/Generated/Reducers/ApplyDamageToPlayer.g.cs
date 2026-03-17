@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void ApplyDamageToPlayer(uint playerId, float damage, uint attackerId)
         {
-            conn.InternalCallReducer(new Reducer.ApplyDamageToPlayer(playerId, damage, attackerId), this.SetCallReducerFlags.ApplyDamageToPlayerFlags);
+            conn.InternalCallReducer(new Reducer.ApplyDamageToPlayer(playerId, damage, attackerId));
         }
 
         public bool InvokeApplyDamageToPlayer(ReducerEventContext ctx, Reducer.ApplyDamageToPlayer args)
@@ -74,11 +74,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "apply_damage_to_player";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags ApplyDamageToPlayerFlags;
-        public void ApplyDamageToPlayer(CallReducerFlags flags) => ApplyDamageToPlayerFlags = flags;
     }
 }

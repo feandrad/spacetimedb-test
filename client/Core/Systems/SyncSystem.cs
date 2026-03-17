@@ -21,6 +21,7 @@ public class SyncSystem : ISystem
     private readonly Dictionary<string, int> _playerEntityMap = new();
     private readonly Dictionary<uint, int> _enemyEntityMap = new();
     private readonly Dictionary<uint, int> _transitionEntityMap = new();
+    private readonly Dictionary<uint, int> _containerEntityMap = new();
 
     public SyncSystem(GameWorld world, NetworkSystem network, GuildmasterClient client, MapSystem mapSystem)
     {
@@ -136,6 +137,7 @@ public class SyncSystem : ISystem
             RegisterEnemyEvents(conn);
             RegisterMapEvents(conn);
             RegisterInteractableEvents(conn);
+            RegisterContainerEvents(conn);
             Console.WriteLine("[Sync] Events Registered.");
 
             // Initial Sync
@@ -145,6 +147,7 @@ public class SyncSystem : ISystem
             foreach (var t in conn.Db.MapTemplate.Iter()) HandleTemplateInsert(null!, t);
             foreach (var t in conn.Db.MapTransition.Iter()) HandleTransitionInsert(null!, t);
             foreach (var i in conn.Db.InteractableObject.Iter()) HandleInteractableInsert(null!, i);
+            foreach (var c in conn.Db.Container.Iter()) HandleContainerInsert(null!, c);
         }
     }
 
@@ -187,6 +190,10 @@ public class SyncSystem : ISystem
         // Limpar Transições (Todos)
         foreach (var tId in _transitionEntityMap.Values) _world.DestroyEntity(tId);
         _transitionEntityMap.Clear();
+
+        // Limpar Containers (Todos)
+        foreach (var cId in _containerEntityMap.Values) _world.DestroyEntity(cId);
+        _containerEntityMap.Clear();
 
         Console.WriteLine("[Sync] Memória visual limpa. Aguardando novos dados do servidor.");
     }
@@ -440,6 +447,47 @@ public class SyncSystem : ISystem
              Color = color,
              Radius = 20 // Slightly larger/distinct
          });
+    }
+
+    private void RegisterContainerEvents(DbConnection conn)
+    {
+        conn.Db.Container.OnInsert += HandleContainerInsert;
+        conn.Db.Container.OnDelete += HandleContainerDelete;
+    }
+
+    private void HandleContainerInsert(EventContext ctx, Container c)
+    {
+        if (_containerEntityMap.ContainsKey(c.Id)) return;
+
+        var entity = _world.CreateEntity();
+        _containerEntityMap[c.Id] = entity.Id;
+
+        entity.AddComponent(new PositionComponent { Position = new Vector2(c.PositionX, c.PositionY) });
+        entity.AddComponent(new RenderComponent
+        {
+            IsCircle = false,
+            Color = Color.Gold,
+            Width = 8,
+            Height = 8
+        });
+        entity.AddComponent(new ContainerComponent
+        {
+            ContainerId = c.Id,
+            Label = c.Label,
+            Capacity = c.Capacity,
+            MapId = c.MapId
+        });
+
+        Console.WriteLine($"[Sync] Container '{c.Label}' (ID: {c.Id}) created at ({c.PositionX}, {c.PositionY})");
+    }
+
+    private void HandleContainerDelete(EventContext ctx, Container c)
+    {
+        if (_containerEntityMap.TryGetValue(c.Id, out var entityId))
+        {
+            _world.DestroyEntity(entityId);
+            _containerEntityMap.Remove(c.Id);
+        }
     }
 
     private void HandleEnemyDelete(EventContext ctx, Enemy e)

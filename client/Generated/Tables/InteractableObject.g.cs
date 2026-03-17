@@ -36,4 +36,42 @@ namespace SpacetimeDB.Types
 
         public readonly InteractableObjectHandle InteractableObject;
     }
+
+    public sealed class InteractableObjectCols
+    {
+        public global::SpacetimeDB.Col<InteractableObject, uint> Id { get; }
+        public global::SpacetimeDB.Col<InteractableObject, string> ObjectType { get; }
+        public global::SpacetimeDB.Col<InteractableObject, float> PositionX { get; }
+        public global::SpacetimeDB.Col<InteractableObject, float> PositionY { get; }
+        public global::SpacetimeDB.Col<InteractableObject, string> MapId { get; }
+        public global::SpacetimeDB.Col<InteractableObject, int> Health { get; }
+        public global::SpacetimeDB.Col<InteractableObject, int> MaxHealth { get; }
+        public global::SpacetimeDB.Col<InteractableObject, int> ResourceCount { get; }
+        public global::SpacetimeDB.Col<InteractableObject, bool> IsDestroyed { get; }
+        public global::SpacetimeDB.Col<InteractableObject, float> RespawnTimer { get; }
+
+        public InteractableObjectCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.Col<InteractableObject, uint>(tableName, "id");
+            ObjectType = new global::SpacetimeDB.Col<InteractableObject, string>(tableName, "object_type");
+            PositionX = new global::SpacetimeDB.Col<InteractableObject, float>(tableName, "position_x");
+            PositionY = new global::SpacetimeDB.Col<InteractableObject, float>(tableName, "position_y");
+            MapId = new global::SpacetimeDB.Col<InteractableObject, string>(tableName, "map_id");
+            Health = new global::SpacetimeDB.Col<InteractableObject, int>(tableName, "health");
+            MaxHealth = new global::SpacetimeDB.Col<InteractableObject, int>(tableName, "max_health");
+            ResourceCount = new global::SpacetimeDB.Col<InteractableObject, int>(tableName, "resource_count");
+            IsDestroyed = new global::SpacetimeDB.Col<InteractableObject, bool>(tableName, "is_destroyed");
+            RespawnTimer = new global::SpacetimeDB.Col<InteractableObject, float>(tableName, "respawn_timer");
+        }
+    }
+
+    public sealed class InteractableObjectIxCols
+    {
+        public global::SpacetimeDB.IxCol<InteractableObject, uint> Id { get; }
+
+        public InteractableObjectIxCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.IxCol<InteractableObject, uint>(tableName, "id");
+        }
+    }
 }

@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void ExecuteContextualAction(uint playerId, uint objectId, string actionType)
         {
-            conn.InternalCallReducer(new Reducer.ExecuteContextualAction(playerId, objectId, actionType), this.SetCallReducerFlags.ExecuteContextualActionFlags);
+            conn.InternalCallReducer(new Reducer.ExecuteContextualAction(playerId, objectId, actionType));
         }
 
         public bool InvokeExecuteContextualAction(ReducerEventContext ctx, Reducer.ExecuteContextualAction args)
@@ -75,11 +75,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "execute_contextual_action";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags ExecuteContextualActionFlags;
-        public void ExecuteContextualAction(CallReducerFlags flags) => ExecuteContextualActionFlags = flags;
     }
 }

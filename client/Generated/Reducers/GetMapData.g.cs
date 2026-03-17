@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void GetMapData(string mapId)
         {
-            conn.InternalCallReducer(new Reducer.GetMapData(mapId), this.SetCallReducerFlags.GetMapDataFlags);
+            conn.InternalCallReducer(new Reducer.GetMapData(mapId));
         }
 
         public bool InvokeGetMapData(ReducerEventContext ctx, Reducer.GetMapData args)
@@ -63,11 +63,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "get_map_data";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags GetMapDataFlags;
-        public void GetMapData(CallReducerFlags flags) => GetMapDataFlags = flags;
     }
 }

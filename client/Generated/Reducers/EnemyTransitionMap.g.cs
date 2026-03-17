@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void EnemyTransitionMap(uint enemyId, string destinationMapId, float spawnX, float spawnY)
         {
-            conn.InternalCallReducer(new Reducer.EnemyTransitionMap(enemyId, destinationMapId, spawnX, spawnY), this.SetCallReducerFlags.EnemyTransitionMapFlags);
+            conn.InternalCallReducer(new Reducer.EnemyTransitionMap(enemyId, destinationMapId, spawnX, spawnY));
         }
 
         public bool InvokeEnemyTransitionMap(ReducerEventContext ctx, Reducer.EnemyTransitionMap args)
@@ -80,11 +80,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "enemy_transition_map";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags EnemyTransitionMapFlags;
-        public void EnemyTransitionMap(CallReducerFlags flags) => EnemyTransitionMapFlags = flags;
     }
 }

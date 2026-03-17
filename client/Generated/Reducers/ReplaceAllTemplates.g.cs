@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void ReplaceAllTemplates(System.Collections.Generic.List<SpacetimeDB.Types.MapTemplate> newTemplates)
         {
-            conn.InternalCallReducer(new Reducer.ReplaceAllTemplates(newTemplates), this.SetCallReducerFlags.ReplaceAllTemplatesFlags);
+            conn.InternalCallReducer(new Reducer.ReplaceAllTemplates(newTemplates));
         }
 
         public bool InvokeReplaceAllTemplates(ReducerEventContext ctx, Reducer.ReplaceAllTemplates args)
@@ -63,11 +63,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "replace_all_templates";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags ReplaceAllTemplatesFlags;
-        public void ReplaceAllTemplates(CallReducerFlags flags) => ReplaceAllTemplatesFlags = flags;
     }
 }

@@ -1,8 +1,8 @@
+use crate::inventory::inventory_item;
+use crate::{player, Player};
 use spacetimedb::{reducer, table, ReducerContext, Table};
-use crate::{Player, player};
-use crate::inventory::{inventory_item};
 
-#[table(name = enemy, public)]
+#[table(accessor = enemy, public)]
 #[derive(Clone)]
 pub struct Enemy {
     #[primary_key]
@@ -37,7 +37,7 @@ pub struct Enemy {
 }
 
 // Projectile table for server-side projectile management
-#[table(name = projectile, public)]
+#[table(accessor = projectile, public)]
 #[derive(Clone)]
 pub struct Projectile {
     #[primary_key]
@@ -55,7 +55,7 @@ pub struct Projectile {
 }
 
 // Combat event for client synchronization
-#[table(name = combat_event, public)]
+#[table(accessor = combat_event, public)]
 #[derive(Clone)]
 pub struct CombatEvent {
     #[primary_key]
@@ -90,7 +90,7 @@ pub fn execute_attack(
     direction_x: f32,
     direction_y: f32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let identity = ctx.sender;
+    let identity = ctx.sender();
 
     // Validate player exists and owns this identity
     let player = match ctx.db.player().id().find(&player_id) {
@@ -473,7 +473,7 @@ pub fn spawn_test_enemy(
     position_y: f32,
     map_id: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let _identity = ctx.sender;
+    let _identity = ctx.sender();
 
     let enemy = Enemy {
         id: generate_enemy_id(),
@@ -530,7 +530,7 @@ pub fn spawn_enemy(
     map_id: String,
     enemy_type: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let _identity = ctx.sender;
+    let _identity = ctx.sender();
 
     // Get enemy type configuration
     let (max_health, movement_speed, attack_damage, attack_range, detection_range, leash_range) =
@@ -583,7 +583,7 @@ pub fn remove_enemy(
     ctx: &ReducerContext,
     enemy_id: u32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let _identity = ctx.sender;
+    let _identity = ctx.sender();
 
     if let Some(enemy) = ctx.db.enemy().id().find(&enemy_id) {
         ctx.db.enemy().id().delete(&enemy_id);
@@ -682,7 +682,7 @@ pub fn enemy_attack_player(
     player_id: u32,
     damage: f32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let _identity = ctx.sender;
+    let _identity = ctx.sender();
 
     // Validate enemy exists
     let mut enemy = match ctx.db.enemy().id().find(&enemy_id) {
@@ -754,7 +754,7 @@ pub fn create_projectile(
     direction_x: f32,
     direction_y: f32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let identity = ctx.sender;
+    let identity = ctx.sender();
 
     // Validate player exists and owns this identity
     let player = match ctx.db.player().id().find(&player_id) {
@@ -817,7 +817,7 @@ pub fn process_hit(
     target_id: u32,
     damage: f32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let identity = ctx.sender;
+    let identity = ctx.sender();
 
     // Validate attacker exists and owns this identity
     let _attacker = match ctx.db.player().id().find(&attacker_id) {

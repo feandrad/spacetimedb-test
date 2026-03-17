@@ -36,4 +36,40 @@ namespace SpacetimeDB.Types
 
         public readonly MapTransitionHandle MapTransition;
     }
+
+    public sealed class MapTransitionCols
+    {
+        public global::SpacetimeDB.Col<MapTransition, uint> Id { get; }
+        public global::SpacetimeDB.Col<MapTransition, string> MapId { get; }
+        public global::SpacetimeDB.Col<MapTransition, float> X { get; }
+        public global::SpacetimeDB.Col<MapTransition, float> Y { get; }
+        public global::SpacetimeDB.Col<MapTransition, float> Width { get; }
+        public global::SpacetimeDB.Col<MapTransition, float> Height { get; }
+        public global::SpacetimeDB.Col<MapTransition, string> DestMapId { get; }
+        public global::SpacetimeDB.Col<MapTransition, float> DestX { get; }
+        public global::SpacetimeDB.Col<MapTransition, float> DestY { get; }
+
+        public MapTransitionCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.Col<MapTransition, uint>(tableName, "id");
+            MapId = new global::SpacetimeDB.Col<MapTransition, string>(tableName, "map_id");
+            X = new global::SpacetimeDB.Col<MapTransition, float>(tableName, "x");
+            Y = new global::SpacetimeDB.Col<MapTransition, float>(tableName, "y");
+            Width = new global::SpacetimeDB.Col<MapTransition, float>(tableName, "width");
+            Height = new global::SpacetimeDB.Col<MapTransition, float>(tableName, "height");
+            DestMapId = new global::SpacetimeDB.Col<MapTransition, string>(tableName, "dest_map_id");
+            DestX = new global::SpacetimeDB.Col<MapTransition, float>(tableName, "dest_x");
+            DestY = new global::SpacetimeDB.Col<MapTransition, float>(tableName, "dest_y");
+        }
+    }
+
+    public sealed class MapTransitionIxCols
+    {
+        public global::SpacetimeDB.IxCol<MapTransition, uint> Id { get; }
+
+        public MapTransitionIxCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.IxCol<MapTransition, uint>(tableName, "id");
+        }
+    }
 }

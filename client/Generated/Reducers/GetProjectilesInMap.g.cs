@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void GetProjectilesInMap(string mapId)
         {
-            conn.InternalCallReducer(new Reducer.GetProjectilesInMap(mapId), this.SetCallReducerFlags.GetProjectilesInMapFlags);
+            conn.InternalCallReducer(new Reducer.GetProjectilesInMap(mapId));
         }
 
         public bool InvokeGetProjectilesInMap(ReducerEventContext ctx, Reducer.GetProjectilesInMap args)
@@ -63,11 +63,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "get_projectiles_in_map";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags GetProjectilesInMapFlags;
-        public void GetProjectilesInMap(CallReducerFlags flags) => GetProjectilesInMapFlags = flags;
     }
 }

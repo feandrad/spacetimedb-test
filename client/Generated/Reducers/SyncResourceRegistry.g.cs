@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void SyncResourceRegistry()
         {
-            conn.InternalCallReducer(new Reducer.SyncResourceRegistry(), this.SetCallReducerFlags.SyncResourceRegistryFlags);
+            conn.InternalCallReducer(new Reducer.SyncResourceRegistry());
         }
 
         public bool InvokeSyncResourceRegistry(ReducerEventContext ctx, Reducer.SyncResourceRegistry args)
@@ -49,11 +49,5 @@ namespace SpacetimeDB.Types
         {
             string IReducerArgs.ReducerName => "sync_resource_registry";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags SyncResourceRegistryFlags;
-        public void SyncResourceRegistry(CallReducerFlags flags) => SyncResourceRegistryFlags = flags;
     }
 }

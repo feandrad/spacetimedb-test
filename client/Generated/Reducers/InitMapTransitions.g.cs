@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void InitMapTransitions()
         {
-            conn.InternalCallReducer(new Reducer.InitMapTransitions(), this.SetCallReducerFlags.InitMapTransitionsFlags);
+            conn.InternalCallReducer(new Reducer.InitMapTransitions());
         }
 
         public bool InvokeInitMapTransitions(ReducerEventContext ctx, Reducer.InitMapTransitions args)
@@ -49,11 +49,5 @@ namespace SpacetimeDB.Types
         {
             string IReducerArgs.ReducerName => "init_map_transitions";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags InitMapTransitionsFlags;
-        public void InitMapTransitions(CallReducerFlags flags) => InitMapTransitionsFlags = flags;
     }
 }

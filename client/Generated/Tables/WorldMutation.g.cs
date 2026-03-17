@@ -36,4 +36,32 @@ namespace SpacetimeDB.Types
 
         public readonly WorldMutationHandle WorldMutation;
     }
+
+    public sealed class WorldMutationCols
+    {
+        public global::SpacetimeDB.Col<WorldMutation, ulong> Id { get; }
+        public global::SpacetimeDB.Col<WorldMutation, uint> InstanceId { get; }
+        public global::SpacetimeDB.Col<WorldMutation, uint> X { get; }
+        public global::SpacetimeDB.Col<WorldMutation, uint> Y { get; }
+        public global::SpacetimeDB.Col<WorldMutation, uint> NewTileId { get; }
+
+        public WorldMutationCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.Col<WorldMutation, ulong>(tableName, "id");
+            InstanceId = new global::SpacetimeDB.Col<WorldMutation, uint>(tableName, "instance_id");
+            X = new global::SpacetimeDB.Col<WorldMutation, uint>(tableName, "x");
+            Y = new global::SpacetimeDB.Col<WorldMutation, uint>(tableName, "y");
+            NewTileId = new global::SpacetimeDB.Col<WorldMutation, uint>(tableName, "new_tile_id");
+        }
+    }
+
+    public sealed class WorldMutationIxCols
+    {
+        public global::SpacetimeDB.IxCol<WorldMutation, ulong> Id { get; }
+
+        public WorldMutationIxCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.IxCol<WorldMutation, ulong>(tableName, "id");
+        }
+    }
 }

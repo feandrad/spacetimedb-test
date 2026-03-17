@@ -1,11 +1,11 @@
-use spacetimedb::{table, reducer, ReducerContext, Table};
+use spacetimedb::{reducer, table, ReducerContext, Table};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
 /// Resource Registry table for storing all game resources
 /// Requirements 1.1: Store resources with unique ID and key_id mapping
 /// Requirements 1.4: Maintain bidirectional mapping between IDs and key_ids
-#[table(name = resource_registry, public)]
+#[table(accessor = resource_registry, public)]
 #[derive(Clone)]
 pub struct ResourceRegistry {
     #[primary_key]
@@ -18,7 +18,7 @@ pub struct ResourceRegistry {
 
 /// Resource ID Mapping table for efficient key_id to ID lookups
 /// Requirements 1.4: Maintain bidirectional mapping between IDs and key_ids
-#[table(name = resource_id_mapping, public)]
+#[table(accessor = resource_id_mapping, public)]
 #[derive(Clone)]
 pub struct ResourceIdMapping {
     #[primary_key]

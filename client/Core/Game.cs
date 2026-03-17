@@ -55,9 +55,10 @@ public class Game
         // 4. Create Systems (Order matters!)
         var networkSystem = new NetworkSystem(_client);
         var mapSystem = new MapSystem(_client, _playerRepo);
-        var syncSystem = new SyncSystem(_world, networkSystem, _client, mapSystem); 
+        var syncSystem = new SyncSystem(_world, networkSystem, _client, mapSystem);
         var inputSystem = new InputSystem(_world, inputService, networkSystem);
         var renderSystem = new RenderSystem(_world, mapSystem, _client.Connection);
+        renderSystem.SetInputSystem(inputSystem);
 
         // 5. Register Systems
         _world.AddSystem(networkSystem);

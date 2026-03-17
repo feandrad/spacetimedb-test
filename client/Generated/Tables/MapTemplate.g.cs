@@ -36,4 +36,34 @@ namespace SpacetimeDB.Types
 
         public readonly MapTemplateHandle MapTemplate;
     }
+
+    public sealed class MapTemplateCols
+    {
+        public global::SpacetimeDB.Col<MapTemplate, string> Name { get; }
+        public global::SpacetimeDB.Col<MapTemplate, uint> Width { get; }
+        public global::SpacetimeDB.Col<MapTemplate, uint> Height { get; }
+        public global::SpacetimeDB.Col<MapTemplate, System.Collections.Generic.List<uint>> TileData { get; }
+        public global::SpacetimeDB.Col<MapTemplate, float> SpawnX { get; }
+        public global::SpacetimeDB.Col<MapTemplate, float> SpawnY { get; }
+
+        public MapTemplateCols(string tableName)
+        {
+            Name = new global::SpacetimeDB.Col<MapTemplate, string>(tableName, "name");
+            Width = new global::SpacetimeDB.Col<MapTemplate, uint>(tableName, "width");
+            Height = new global::SpacetimeDB.Col<MapTemplate, uint>(tableName, "height");
+            TileData = new global::SpacetimeDB.Col<MapTemplate, System.Collections.Generic.List<uint>>(tableName, "tile_data");
+            SpawnX = new global::SpacetimeDB.Col<MapTemplate, float>(tableName, "spawn_x");
+            SpawnY = new global::SpacetimeDB.Col<MapTemplate, float>(tableName, "spawn_y");
+        }
+    }
+
+    public sealed class MapTemplateIxCols
+    {
+        public global::SpacetimeDB.IxCol<MapTemplate, string> Name { get; }
+
+        public MapTemplateIxCols(string tableName)
+        {
+            Name = new global::SpacetimeDB.IxCol<MapTemplate, string>(tableName, "name");
+        }
+    }
 }

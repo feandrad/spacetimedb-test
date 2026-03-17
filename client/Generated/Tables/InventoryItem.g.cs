@@ -36,4 +36,34 @@ namespace SpacetimeDB.Types
 
         public readonly InventoryItemHandle InventoryItem;
     }
+
+    public sealed class InventoryItemCols
+    {
+        public global::SpacetimeDB.Col<InventoryItem, uint> Id { get; }
+        public global::SpacetimeDB.Col<InventoryItem, uint> PlayerId { get; }
+        public global::SpacetimeDB.Col<InventoryItem, string> ItemId { get; }
+        public global::SpacetimeDB.Col<InventoryItem, int> Quantity { get; }
+        public global::SpacetimeDB.Col<InventoryItem, bool> IsEquipped { get; }
+        public global::SpacetimeDB.Col<InventoryItem, string> SlotType { get; }
+
+        public InventoryItemCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.Col<InventoryItem, uint>(tableName, "id");
+            PlayerId = new global::SpacetimeDB.Col<InventoryItem, uint>(tableName, "player_id");
+            ItemId = new global::SpacetimeDB.Col<InventoryItem, string>(tableName, "item_id");
+            Quantity = new global::SpacetimeDB.Col<InventoryItem, int>(tableName, "quantity");
+            IsEquipped = new global::SpacetimeDB.Col<InventoryItem, bool>(tableName, "is_equipped");
+            SlotType = new global::SpacetimeDB.Col<InventoryItem, string>(tableName, "slot_type");
+        }
+    }
+
+    public sealed class InventoryItemIxCols
+    {
+        public global::SpacetimeDB.IxCol<InventoryItem, uint> Id { get; }
+
+        public InventoryItemIxCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.IxCol<InventoryItem, uint>(tableName, "id");
+        }
+    }
 }

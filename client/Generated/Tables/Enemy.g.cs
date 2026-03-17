@@ -36,4 +36,74 @@ namespace SpacetimeDB.Types
 
         public readonly EnemyHandle Enemy;
     }
+
+    public sealed class EnemyCols
+    {
+        public global::SpacetimeDB.Col<Enemy, uint> Id { get; }
+        public global::SpacetimeDB.Col<Enemy, float> PositionX { get; }
+        public global::SpacetimeDB.Col<Enemy, float> PositionY { get; }
+        public global::SpacetimeDB.Col<Enemy, float> VelocityX { get; }
+        public global::SpacetimeDB.Col<Enemy, float> VelocityY { get; }
+        public global::SpacetimeDB.Col<Enemy, float> Health { get; }
+        public global::SpacetimeDB.Col<Enemy, float> MaxHealth { get; }
+        public global::SpacetimeDB.Col<Enemy, string> EnemyType { get; }
+        public global::SpacetimeDB.Col<Enemy, string> MapId { get; }
+        public global::SpacetimeDB.Col<Enemy, string> State { get; }
+        public global::SpacetimeDB.Col<Enemy, float> PatrolCenterX { get; }
+        public global::SpacetimeDB.Col<Enemy, float> PatrolCenterY { get; }
+        public global::SpacetimeDB.Col<Enemy, float> PatrolRadius { get; }
+        public global::SpacetimeDB.Col<Enemy, float> DetectionRange { get; }
+        public global::SpacetimeDB.Col<Enemy, float> LeashRange { get; }
+        public global::SpacetimeDB.Col<Enemy, uint> TargetPlayerId { get; }
+        public global::SpacetimeDB.Col<Enemy, string> TargetMapId { get; }
+        public global::SpacetimeDB.Col<Enemy, float> LastKnownPlayerX { get; }
+        public global::SpacetimeDB.Col<Enemy, float> LastKnownPlayerY { get; }
+        public global::SpacetimeDB.Col<Enemy, float> StateTimer { get; }
+        public global::SpacetimeDB.Col<Enemy, float> MovementSpeed { get; }
+        public global::SpacetimeDB.Col<Enemy, float> AttackDamage { get; }
+        public global::SpacetimeDB.Col<Enemy, float> AttackRange { get; }
+        public global::SpacetimeDB.Col<Enemy, float> AttackCooldown { get; }
+        public global::SpacetimeDB.Col<Enemy, double> LastAttackTime { get; }
+        public global::SpacetimeDB.Col<Enemy, bool> IsActive { get; }
+
+        public EnemyCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.Col<Enemy, uint>(tableName, "id");
+            PositionX = new global::SpacetimeDB.Col<Enemy, float>(tableName, "position_x");
+            PositionY = new global::SpacetimeDB.Col<Enemy, float>(tableName, "position_y");
+            VelocityX = new global::SpacetimeDB.Col<Enemy, float>(tableName, "velocity_x");
+            VelocityY = new global::SpacetimeDB.Col<Enemy, float>(tableName, "velocity_y");
+            Health = new global::SpacetimeDB.Col<Enemy, float>(tableName, "health");
+            MaxHealth = new global::SpacetimeDB.Col<Enemy, float>(tableName, "max_health");
+            EnemyType = new global::SpacetimeDB.Col<Enemy, string>(tableName, "enemy_type");
+            MapId = new global::SpacetimeDB.Col<Enemy, string>(tableName, "map_id");
+            State = new global::SpacetimeDB.Col<Enemy, string>(tableName, "state");
+            PatrolCenterX = new global::SpacetimeDB.Col<Enemy, float>(tableName, "patrol_center_x");
+            PatrolCenterY = new global::SpacetimeDB.Col<Enemy, float>(tableName, "patrol_center_y");
+            PatrolRadius = new global::SpacetimeDB.Col<Enemy, float>(tableName, "patrol_radius");
+            DetectionRange = new global::SpacetimeDB.Col<Enemy, float>(tableName, "detection_range");
+            LeashRange = new global::SpacetimeDB.Col<Enemy, float>(tableName, "leash_range");
+            TargetPlayerId = new global::SpacetimeDB.Col<Enemy, uint>(tableName, "target_player_id");
+            TargetMapId = new global::SpacetimeDB.Col<Enemy, string>(tableName, "target_map_id");
+            LastKnownPlayerX = new global::SpacetimeDB.Col<Enemy, float>(tableName, "last_known_player_x");
+            LastKnownPlayerY = new global::SpacetimeDB.Col<Enemy, float>(tableName, "last_known_player_y");
+            StateTimer = new global::SpacetimeDB.Col<Enemy, float>(tableName, "state_timer");
+            MovementSpeed = new global::SpacetimeDB.Col<Enemy, float>(tableName, "movement_speed");
+            AttackDamage = new global::SpacetimeDB.Col<Enemy, float>(tableName, "attack_damage");
+            AttackRange = new global::SpacetimeDB.Col<Enemy, float>(tableName, "attack_range");
+            AttackCooldown = new global::SpacetimeDB.Col<Enemy, float>(tableName, "attack_cooldown");
+            LastAttackTime = new global::SpacetimeDB.Col<Enemy, double>(tableName, "last_attack_time");
+            IsActive = new global::SpacetimeDB.Col<Enemy, bool>(tableName, "is_active");
+        }
+    }
+
+    public sealed class EnemyIxCols
+    {
+        public global::SpacetimeDB.IxCol<Enemy, uint> Id { get; }
+
+        public EnemyIxCols(string tableName)
+        {
+            Id = new global::SpacetimeDB.IxCol<Enemy, uint>(tableName, "id");
+        }
+    }
 }

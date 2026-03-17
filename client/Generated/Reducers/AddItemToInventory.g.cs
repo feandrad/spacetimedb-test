@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void AddItemToInventory(uint playerId, string itemId, int quantity)
         {
-            conn.InternalCallReducer(new Reducer.AddItemToInventory(playerId, itemId, quantity), this.SetCallReducerFlags.AddItemToInventoryFlags);
+            conn.InternalCallReducer(new Reducer.AddItemToInventory(playerId, itemId, quantity));
         }
 
         public bool InvokeAddItemToInventory(ReducerEventContext ctx, Reducer.AddItemToInventory args)
@@ -75,11 +75,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "add_item_to_inventory";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags AddItemToInventoryFlags;
-        public void AddItemToInventory(CallReducerFlags flags) => AddItemToInventoryFlags = flags;
     }
 }

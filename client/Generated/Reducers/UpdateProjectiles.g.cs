@@ -17,7 +17,7 @@ namespace SpacetimeDB.Types
 
         public void UpdateProjectiles(float deltaTime)
         {
-            conn.InternalCallReducer(new Reducer.UpdateProjectiles(deltaTime), this.SetCallReducerFlags.UpdateProjectilesFlags);
+            conn.InternalCallReducer(new Reducer.UpdateProjectiles(deltaTime));
         }
 
         public bool InvokeUpdateProjectiles(ReducerEventContext ctx, Reducer.UpdateProjectiles args)
@@ -62,11 +62,5 @@ namespace SpacetimeDB.Types
 
             string IReducerArgs.ReducerName => "update_projectiles";
         }
-    }
-
-    public sealed partial class SetReducerFlags
-    {
-        internal CallReducerFlags UpdateProjectilesFlags;
-        public void UpdateProjectiles(CallReducerFlags flags) => UpdateProjectilesFlags = flags;
     }
 }

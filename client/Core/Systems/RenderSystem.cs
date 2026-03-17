@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Numerics;
 using Guildmaster.Client.Core.Components;
 using Guildmaster.Client.Core.ECS;
@@ -15,7 +16,8 @@ public class RenderSystem : ISystem
 
     private readonly GameWorld _world;
     private readonly MapSystem _mapSystem;
-    private readonly DbConnection? _conn; 
+    private readonly DbConnection? _conn;
+    private InputSystem? _inputSystem;
 
     private Camera2D _camera;
 
@@ -24,13 +26,18 @@ public class RenderSystem : ISystem
         _world = world;
         _mapSystem = mapSystem;
         _conn = conn;
-        
+
         _camera = new Camera2D();
         _camera.Zoom = 1.0f;
         _camera.Rotation = 0.0f;
         _camera.Offset = new Vector2(400, 225);
 
         _tilesetTexture = Raylib.LoadTexture("Assets/assets.png");
+    }
+
+    public void SetInputSystem(InputSystem inputSystem)
+    {
+        _inputSystem = inputSystem;
     }
 
     public void Update(float deltaTime) 
@@ -73,8 +80,12 @@ public class RenderSystem : ISystem
 
         DrawMap();
         DrawEntities();
+        DrawContainerPrompts();
 
         Raylib.EndMode2D();
+
+        // UI overlay (screen space)
+        DrawContainerUI();
     }
 
     private void DrawMap()
@@ -132,7 +143,6 @@ public class RenderSystem : ISystem
                 }
                 else
                 {
-                    // TRANSITION ZONES (Retângulos):
                     float visualWidth = render.Width * SCALE;
                     float visualHeight = render.Height * SCALE;
 
@@ -143,12 +153,91 @@ public class RenderSystem : ISystem
                         (int)visualHeight,
                         render.Color
                     );
-
-
-
-//                    Raylib.DrawRectangle((int)pos.Position.X, (int)pos.Position.Y, (int)render.Width, (int)render.Height, render.Color);
                 }
             }
         }
     }
+
+    private void DrawContainerPrompts()
+    {
+        // Show [E] prompt above nearby containers when not already open
+        if (_inputSystem?.OpenContainerId != null) return;
+
+        var localPlayer = _world.GetEntities()
+            .FirstOrDefault(e => e.GetComponent<PlayerComponent>()?.IsLocalPlayer == true);
+        if (localPlayer == null) return;
+
+        var playerPos = localPlayer.GetComponent<PositionComponent>();
+        if (playerPos == null) return;
+
+        foreach (var entity in _world.GetEntities())
+        {
+            var container = entity.GetComponent<ContainerComponent>();
+            var pos = entity.GetComponent<PositionComponent>();
+            if (container == null || pos == null) continue;
+
+            float dx = playerPos.Position.X - pos.Position.X;
+            float dy = playerPos.Position.Y - pos.Position.Y;
+            float dist = MathF.Sqrt(dx * dx + dy * dy);
+
+            if (dist < 16.0f)
+            {
+                Vector2 drawPos = pos.Position * SCALE;
+                Raylib.DrawText("[E] Open", (int)drawPos.X - 16, (int)drawPos.Y - 20, 10, Color.White);
+            }
+        }
+    }
+
+    private void DrawContainerUI()
+    {
+        if (_inputSystem?.OpenContainerId == null || _conn == null) return;
+
+        uint containerId = _inputSystem.OpenContainerId.Value;
+        string label = _inputSystem.OpenContainerLabel ?? "Chest";
+
+        // Panel background
+        int panelX = 500, panelY = 50, panelW = 280, panelH = 300;
+        Raylib.DrawRectangle(panelX, panelY, panelW, panelH, new Color(30, 30, 30, 220));
+        Raylib.DrawRectangleLines(panelX, panelY, panelW, panelH, Color.Gold);
+
+        Raylib.DrawText(label, panelX + 10, panelY + 10, 16, Color.Gold);
+        Raylib.DrawText("--- Container ---", panelX + 10, panelY + 30, 10, Color.Gray);
+
+        int y = panelY + 50;
+        foreach (var ci in _conn.Db.ContainerItem.Iter())
+        {
+            if (ci.ContainerId != containerId) continue;
+            Raylib.DrawText($"  {ci.ItemId} x{ci.Quantity}", panelX + 10, y, 12, Color.White);
+            y += 18;
+        }
+
+        if (y == panelY + 50)
+        {
+            Raylib.DrawText("  (empty)", panelX + 10, y, 12, Color.DarkGray);
+            y += 18;
+        }
+
+        // Player inventory section
+        y += 10;
+        Raylib.DrawText("--- Your Inventory ---", panelX + 10, y, 10, Color.Gray);
+        y += 18;
+
+        var localPlayer = _world.GetEntities()
+            .FirstOrDefault(e => e.GetComponent<PlayerComponent>()?.IsLocalPlayer == true);
+        if (localPlayer != null)
+        {
+            var playerId = localPlayer.GetComponent<PlayerComponent>()!.PlayerId;
+            foreach (var inv in _conn.Db.InventoryItem.Iter())
+            {
+                if (inv.PlayerId != playerId) continue;
+                Raylib.DrawText($"  {inv.ItemId} x{inv.Quantity}", panelX + 10, y, 12, Color.LightGray);
+                y += 18;
+            }
+        }
+
+        // Controls
+        y += 10;
+        Raylib.DrawText("[1] Deposit  [2] Withdraw  [E] Close", panelX + 10, y, 10, Color.Yellow);
+    }
+
 }
